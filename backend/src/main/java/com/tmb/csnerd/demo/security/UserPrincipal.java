@@ -6,12 +6,14 @@ import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.List;
 
 @AllArgsConstructor @Getter
 public class UserPrincipal extends User implements UserDetails {
+    private static final Logger log = LoggerFactory.getLogger(UserPrincipal.class);
     private final User user;
 
     @Override
@@ -26,7 +28,8 @@ public class UserPrincipal extends User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(user.getRole().getRoleCode()));
+        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority(user.getRole().getRoleCode());
+        return List.of(grantedAuthority);
     }
 
     @Override

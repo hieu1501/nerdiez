@@ -17,12 +17,12 @@ import java.util.Set;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Getter @Setter @AllArgsConstructor @NoArgsConstructor
-@Table(name = "post")
+@Table(name = "posts")
 public class Post {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @Column(name = "title")
     private String title;
@@ -46,14 +46,14 @@ public class Post {
     private User author;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "category_name")
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "posts_topics",
         joinColumns = @JoinColumn(name = "post_id"),
-        inverseJoinColumns = @JoinColumn(name = "topic_name")
+        inverseJoinColumns = @JoinColumn(name = "topic_id")
     )
     private List<Topic> topics;
 
@@ -66,8 +66,8 @@ public class Post {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostsVote> votes;
 
-    public Set<Integer> getTopicIds() {
-        Set<Integer> topicIds = new HashSet<>(Set.of());
+    public Set<Long> getTopicIds() {
+        Set<Long> topicIds = new HashSet<>(Set.of());
         for (Topic topic : topics) {
             topicIds.add(topic.getId());
         }

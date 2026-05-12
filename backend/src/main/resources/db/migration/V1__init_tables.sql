@@ -5,7 +5,7 @@ CREATE TABLE `nerdy`.`user_roles` (
 );
 
 CREATE TABLE `nerdy`.`users` (
-  `id` integer PRIMARY KEY,
+  `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `username` varchar(50) UNIQUE NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `is_active` bool NOT NULL DEFAULT true,
@@ -15,46 +15,46 @@ CREATE TABLE `nerdy`.`users` (
 );
 
 CREATE TABLE `nerdy`.`categories` (
-  `id` integer PRIMARY KEY,
+  `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `slug_name` varchar(255) UNIQUE NOT NULL,
   `name` varchar(255) NOT NULL
 );
 
 CREATE TABLE `nerdy`.`posts` (
-  `id` integer PRIMARY KEY,
+  `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `slug` varchar(255) UNIQUE NOT NULL,
   `content` text,
-  `author_id` integer NOT NULL,
+  `author_id` bigint NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `category_id` varchar(255),
+  `category_id` bigint,
   `is_active` bool DEFAULT true
 );
 
 CREATE TABLE `nerdy`.`posts_metadata` (
-  `post_id` integer PRIMARY KEY,
+  `post_id` bigint PRIMARY KEY,
   `description` varchar(255),
   `featured_image` varchar(255)
 );
 
 CREATE TABLE `nerdy`.`posts_vote` (
-  `post_id` integer,
-  `user_id` integer,
+  `post_id` bigint,
+  `user_id` bigint,
   `vote` tinyint DEFAULT 0,
   `is_active` bool DEFAULT false,
   PRIMARY KEY (`post_id`, `user_id`)
 );
 
 CREATE TABLE `nerdy`.`topics` (
-  `id` integer PRIMARY KEY,
+  `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `slug_name` varchar(255) UNIQUE NOT NULL,
   `name` varchar(255) NOT NULL
 );
 
 CREATE TABLE `nerdy`.`posts_topics` (
-  `post_id` integer,
-  `topic_id` varchar(255),
+  `post_id` bigint,
+  `topic_id` bigint,
   PRIMARY KEY (`post_id`, `topic_id`)
 );
 

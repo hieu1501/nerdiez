@@ -13,11 +13,11 @@ import java.util.Set;
 @Getter @Setter @AllArgsConstructor @NoArgsConstructor
 public class Topic {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
-    @Column(name = "slug_name")
+    @Column(name = "slug_name",  unique = true, nullable = false)
     private String slugName;
 
     @Column(name = "name")

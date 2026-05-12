@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 public class CategoryCommandService {
     private final CategoryRepository categoryRepository;
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
 
     @Transactional
     public CategoryResponseDTO createCategory(CreateCategoryDTO request) {
@@ -36,7 +35,7 @@ public class CategoryCommandService {
     }
 
     @Transactional
-    public CategoryResponseDTO patchCategory(Integer categoryId, UpdateCategoryDTO request) {
+    public CategoryResponseDTO patchCategory(Long categoryId, UpdateCategoryDTO request) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new CatergoryNotFound(categoryId));
         if (category.getName() != null && !category.getName().isEmpty() && !category.getName().equals(request.name())) {
@@ -47,7 +46,7 @@ public class CategoryCommandService {
     }
 
     @Transactional
-    public CategoryResponseDTO putCategory(Integer categoryId, ReplaceCategoryDTO request) {
+    public CategoryResponseDTO putCategory(Long categoryId, ReplaceCategoryDTO request) {
         Category category = categoryRepository.findById(categoryId)
                 .orElse(null);
         if (category == null) {
@@ -60,7 +59,7 @@ public class CategoryCommandService {
     }
 
     @Transactional
-    public void deleteCategory(Integer categoryId) {
+    public void deleteCategory(Long categoryId) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new CatergoryNotFound(categoryId));
         if (postRepository.existsActiveByCategoryId(categoryId)) {

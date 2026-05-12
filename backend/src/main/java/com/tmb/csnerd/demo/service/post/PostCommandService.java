@@ -50,7 +50,7 @@ public class PostCommandService {
         post.setAuthor(author);
         post.setCategory(category);
         post.setIsActive(true);
-        Set<Integer> topicIds = request.topicIds() == null ? Set.of() : request.topicIds();
+        Set<Long> topicIds = request.topicIds() == null ? Set.of() : request.topicIds();
         List<Topic> topics = topicRepository.findAllById(topicIds);
         post.setTopics(topics);
 
@@ -67,7 +67,7 @@ public class PostCommandService {
     }
 
     @Transactional
-    public PostItemDTO patchPost(Integer postId, UpdatePostDTO request, UserPrincipal author) {
+    public PostItemDTO patchPost(Long postId, UpdatePostDTO request, UserPrincipal author) {
         if (author == null) {
             throw new UnauthorizedException(HttpStatus.UNAUTHORIZED);
         }
@@ -104,7 +104,7 @@ public class PostCommandService {
     }
 
     @Transactional
-    public PostItemDTO putPost(Integer postId, ReplacePostDTO request, UserPrincipal author) {
+    public PostItemDTO putPost(Long postId, ReplacePostDTO request, UserPrincipal author) {
         if (author == null) {
             throw new UnauthorizedException(HttpStatus.UNAUTHORIZED);
         }
@@ -136,7 +136,7 @@ public class PostCommandService {
     }
 
     @Transactional
-    public void deletePost(Integer postId, UserPrincipal author) {
+    public void deletePost(Long postId, UserPrincipal author) {
         Post post = postRepository.findById(postId).
                 orElseThrow(() -> new PostNotFound(postId));
         if (!post.getAuthor().getId().equals(author.getId())) {
@@ -152,14 +152,14 @@ public class PostCommandService {
         return true;
     }
 
-    private boolean checkPostAttributeCanBeChanged(Integer newValue, Integer oldValue)
+    private boolean checkPostAttributeCanBeChanged(Long newValue, Long oldValue)
     {
         if (newValue == null) return false;
         if (oldValue.equals(newValue)) return false;
         return true;
     }
 
-    private boolean checkPostAttributeCanBeChanged(Set<Integer> newValue, Set<Integer> oldValue)
+    private boolean checkPostAttributeCanBeChanged(Set<Long> newValue, Set<Long> oldValue)
     {
         if (newValue == null) return false;
         if (oldValue.equals(newValue)) return false;
@@ -169,7 +169,6 @@ public class PostCommandService {
     private PostItemDTO convertToPostItemDTO(Post post) {
         Pair<Integer, Integer> voteResult = getVoteCount(post.getVotes());
         return new PostItemDTO(
-                post.getId(),
                 post.getTitle(),
                 post.getSlug(),
                 post.getContent(),
@@ -185,8 +184,8 @@ public class PostCommandService {
 
     // First value is upvote, second is downvote
     private Pair<Integer, Integer> getVoteCount(List<PostsVote> postsVote) {
-        int upvotes = 0;
-        int downvotes = 0;
+        Integer upvotes = 0;
+        Integer downvotes = 0;
         for (PostsVote vote : postsVote)
         {
             if (vote.getIsActive() && vote.getVote() != 0)

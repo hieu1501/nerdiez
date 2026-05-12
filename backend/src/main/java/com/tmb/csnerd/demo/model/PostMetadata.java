@@ -11,11 +11,11 @@ import java.util.Set;
 
 @Entity
 @Getter @Setter @AllArgsConstructor @NoArgsConstructor
-@Table(name = "post")
+@Table(name = "posts_metadata")
 public class PostMetadata {
     @Id
     @Column(name = "post_id", nullable = false)
-    private Integer id;
+    private Long id;
 
     @Column(name = "description")
     private String description;

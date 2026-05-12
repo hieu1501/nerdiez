@@ -9,6 +9,7 @@ import com.tmb.csnerd.demo.service.category.CategoryCommandService;
 import com.tmb.csnerd.demo.service.category.CategoryQueryService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,26 +20,34 @@ public class CategoryController {
     private final CategoryCommandService categoryCommandService;
     private final CategoryQueryService categoryQueryService;
 
-    @PostMapping
+    @PostMapping(
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
     public ResponseEntity<CategoryResponseDTO> createCategory(@Valid @RequestBody CreateCategoryDTO createCategoryDTO) {
         CategoryResponseDTO categoryResponseDTO = categoryCommandService.createCategory(createCategoryDTO);
         return ResponseEntity.ok(categoryResponseDTO);
     }
 
-    @PutMapping("{/id}")
-    public ResponseEntity<CategoryResponseDTO> putCategory(@PathVariable Integer id, @Valid @RequestBody ReplaceCategoryDTO replaceCategoryDTO) {
+    @PutMapping(
+        path = "/{id}",
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<CategoryResponseDTO> putCategory(@PathVariable Long id, @Valid @RequestBody ReplaceCategoryDTO replaceCategoryDTO) {
         CategoryResponseDTO categoryResponseDTO = categoryCommandService.putCategory(id, replaceCategoryDTO);
         return ResponseEntity.ok(categoryResponseDTO);
     }
 
-    @PatchMapping("{/id}")
-    public ResponseEntity<CategoryResponseDTO> patchCategory(@PathVariable Integer id, @Valid @RequestBody UpdateCategoryDTO updateCategoryDTO) {
+    @PatchMapping(
+        path = "/{id}",
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<CategoryResponseDTO> patchCategory(@PathVariable Long id, @Valid @RequestBody UpdateCategoryDTO updateCategoryDTO) {
         CategoryResponseDTO categoryResponseDTO = categoryCommandService.patchCategory(id, updateCategoryDTO);
         return ResponseEntity.ok(categoryResponseDTO);
     }
 
-    @DeleteMapping("{/id}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Integer id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryCommandService.deleteCategory(id);
         return ResponseEntity.ok().build();
     }

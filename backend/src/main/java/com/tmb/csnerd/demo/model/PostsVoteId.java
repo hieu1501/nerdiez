@@ -1,5 +1,6 @@
 package com.tmb.csnerd.demo.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,8 +13,11 @@ import java.util.Objects;
 @Embeddable
 @Getter @Setter @AllArgsConstructor @NoArgsConstructor
 public class PostsVoteId implements Serializable {
-    private Integer postId;
-    private Integer userId;
+    @Column(name = "post_id")
+    private Long postId;
+
+    @Column(name = "user_id")
+    private Long userId;
 
     @Override
     public boolean equals(Object o) {

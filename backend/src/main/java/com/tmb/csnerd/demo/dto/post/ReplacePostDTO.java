@@ -10,6 +10,6 @@ public record ReplacePostDTO(
     @NotBlank String content,
     String featuredImage,
     String description,
-    @NotNull Integer categoryId,
-    Set<Integer> topicIds
+    @NotNull Long categoryId,
+    Set<Long> topicIds
 ) {}

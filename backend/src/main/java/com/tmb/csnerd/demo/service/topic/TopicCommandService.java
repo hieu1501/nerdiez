@@ -31,7 +31,7 @@ public class TopicCommandService {
     }
 
     @Transactional
-    public TopicResponseDTO patchTopic(Integer topicId, UpdateTopicDTO request) {
+    public TopicResponseDTO patchTopic(Long topicId, UpdateTopicDTO request) {
         Topic topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new TopicNotFound(topicId));
         if (topic.getName() != null && !topic.getName().isEmpty() && !topic.getName().equals(request.name())) {
@@ -42,7 +42,7 @@ public class TopicCommandService {
     }
 
     @Transactional
-    public TopicResponseDTO putTopic(Integer topicId, ReplaceTopicDTO request) {
+    public TopicResponseDTO putTopic(Long topicId, ReplaceTopicDTO request) {
         Topic topic = topicRepository.findById(topicId)
                 .orElse(null);
         if (topic == null) {
@@ -55,7 +55,7 @@ public class TopicCommandService {
     }
 
     @Transactional
-    public void deleteTopic(Integer topicId) {
+    public void deleteTopic(Long topicId) {
         Topic topic = topicRepository.findById(topicId)
             .orElseThrow(() -> new TopicNotFound(topicId));
         if (postRepository.existsActiveByTopicId(topicId)) {

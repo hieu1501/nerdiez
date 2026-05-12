@@ -20,9 +20,9 @@ import java.util.Set;
 @Getter @Setter @AllArgsConstructor @NoArgsConstructor
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @Column(name = "username")
     private String username;
@@ -43,7 +43,7 @@ public class User {
 
     @Fetch(FetchMode.JOIN)
     @ManyToOne(optional = false)
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "role_id")
     private UserRole role;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

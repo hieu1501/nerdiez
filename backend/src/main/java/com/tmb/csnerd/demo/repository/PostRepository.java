@@ -8,14 +8,13 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface PostRepository extends JpaRepository<Post, Integer> {
+public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("""
         SELECT p FROM Post p
         LEFT JOIN FETCH p.author a
         LEFT JOIN FETCH p.category c
         LEFT JOIN FETCH p.topics t
         LEFT JOIN FETCH p.postMetadata pm
-        LEFT JOIN FETCH p.votes v
         WHERE p.isActive = true
         ORDER BY p.createdAt DESC
     """)
@@ -24,7 +23,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query("""
         SELECT p FROM Post p
         LEFT JOIN p.votes v
-        WHERE p.isActive = true 
+        WHERE p.isActive = true
         GROUP BY p.id
         ORDER BY SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END) DESC
 """)
@@ -36,7 +35,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
         WHERE p.category.id = :categoryId
           AND p.isActive = true
     """)
-    boolean existsActiveByCategoryId(@Param("categoryId") Integer categoryId);
+    boolean existsActiveByCategoryId(@Param("categoryId") Long categoryId);
 
     @Query("""
         SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
@@ -45,12 +44,23 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
         WHERE t.id = :topicId
           AND p.isActive = true
     """)
-    boolean existsActiveByTopicId(@Param("topicId") Integer topicId);
+    boolean existsActiveByTopicId(@Param("topicId") Long topicId);
 
     @Query("""
         SELECT p FROM Post p
         WHERE p.id = :postId
         AND p.isActive = true
     """)
-    Optional<Post> findActivePostByPostId(@Param("postId") Integer postId);
+    Optional<Post> findActivePostByPostId(@Param("postId") Long postId);
+
+    @Query("""
+        SELECT (p.id,
+        SUM(CASE WHEN v.isActive = true AND v.vote = 1 THEN 1 ELSE 0 END),
+        SUM(CASE WHEN v.isActive = true AND v.vote = -1 THEN 1 ELSE 0 END))
+        FROM Post p
+        LEFT JOIN p.votes v
+        WHERE p.id IN :postIds
+        GROUP BY p.id
+    """)
+    List<Object[]> findVoteCountsByPostIds(@Param("postIds") List<Long> postIds);
 }

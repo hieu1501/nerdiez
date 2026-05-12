@@ -10,6 +10,6 @@ public record UpdatePostDTO(
     String content,
     String featuredImage,
     String description,
-    Integer categoryId,
-    Set<Integer> topicIds
+    Long categoryId,
+    Set<Long> topicIds
 ) {}
