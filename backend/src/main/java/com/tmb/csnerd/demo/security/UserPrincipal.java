@@ -1,6 +1,6 @@
 package com.tmb.csnerd.demo.security;
 
-import com.tmb.csnerd.demo.model.User;
+import com.tmb.csnerd.demo.models.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;

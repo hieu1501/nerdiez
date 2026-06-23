@@ -7,10 +7,12 @@ CREATE TABLE `nerdy`.`user_roles` (
 CREATE TABLE `nerdy`.`users` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `username` varchar(50) UNIQUE NOT NULL,
-  `password_hash` varchar(255) NOT NULL,
+  `password_hash` varchar(255) NULL,
   `is_active` bool NOT NULL DEFAULT true,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `email` varchar(255) NULL UNIQUE,
+  `google_sub` varchar(255) NULL UNIQUE,
   `role_id` integer
 );
 

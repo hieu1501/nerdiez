@@ -19,6 +19,8 @@ servers:
         default: dev
 tags:
   - name: articles
+    description: Articles for public users
+  - name: admin articles
     description: Article management operations
   - name: users
     description: User management operations
@@ -26,7 +28,7 @@ paths:
   /articles:
     get:
       tags: [articles]
-      summary: Get all articles
+      summary: Get all articles for reading
       responses:
         "200":
           description: OK
@@ -41,27 +43,6 @@ paths:
                     $ref: '#/components/schemas/articleList'
                   featuredArticles:
                     $ref: '#/components/schemas/articleList'
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error'
-    post:
-      tags: [articles]
-      summary: Add an article
-      security:
-        - bearerHttpAuthentication:
-            - write: authorizedUser
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/articleAdd'
-      responses:
-        "200":
-          description: OK
         default:
           description: Unexpected error
           content:
@@ -119,8 +100,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error'
+  /admin/articles:
+    get:
+      tags: [admin articles]
+      summary: Get all articles for management
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/articleList'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+    post:
+      tags: [admin articles]
+      summary: Add an article
+      security:
+        - bearerHttpAuthentication:
+            - write: authorizedUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/articleAdd'
+      responses:
+        "200":
+          description: OK
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+  /admin/articles/{id}:
+    get:
+      tags: [admin articles]
+      summary: Inspect an article
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/articleDetail'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
     delete:
-      tags: [articles]
+      tags: [admin articles]
       summary: Delete an article
       security:
         - bearerHttpAuthentication:
@@ -141,7 +183,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/error'
     patch:
-      tags: [articles]
+      tags: [admin articles]
       summary: Update an article
       security:
         - bearerHttpAuthentication:

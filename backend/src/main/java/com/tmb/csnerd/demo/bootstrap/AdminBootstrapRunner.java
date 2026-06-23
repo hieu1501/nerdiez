@@ -1,9 +1,9 @@
 package com.tmb.csnerd.demo.bootstrap;
 
-import com.tmb.csnerd.demo.model.User;
-import com.tmb.csnerd.demo.model.UserRole;
-import com.tmb.csnerd.demo.repository.UserRepository;
-import com.tmb.csnerd.demo.repository.UserRoleRepository;
+import com.tmb.csnerd.demo.models.User;
+import com.tmb.csnerd.demo.models.UserRole;
+import com.tmb.csnerd.demo.repositories.UserRepository;
+import com.tmb.csnerd.demo.repositories.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,12 +1,10 @@
 package com.tmb.csnerd.demo.dto.post;
 
-import com.tmb.csnerd.demo.model.Category;
-import com.tmb.csnerd.demo.model.Topic;
-import com.tmb.csnerd.demo.model.User;
+import com.tmb.csnerd.demo.models.Category;
+import com.tmb.csnerd.demo.models.Topic;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 public record PostItemDTO(
     String title,
