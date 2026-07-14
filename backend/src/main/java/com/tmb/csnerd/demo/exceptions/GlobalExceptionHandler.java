@@ -1,5 +1,6 @@
 package com.tmb.csnerd.demo.exceptions;
 
+import com.tmb.csnerd.demo.exceptions.auth.InvalidTokenException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -51,6 +52,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictStatusException.class)
     public ResponseEntity<ErrorResponse> handleConflictStatus(ConflictStatusException ex) {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid Token");
     }
 
     @ExceptionHandler(Exception.class)

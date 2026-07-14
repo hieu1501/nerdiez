@@ -1,0 +1,55 @@
+package com.tmb.csnerd.demo.domain.services.auth;
+
+import com.tmb.csnerd.demo.domain.models.PostsVote;
+import com.tmb.csnerd.demo.domain.models.User;
+import com.tmb.csnerd.demo.domain.models.UserRole;
+import com.tmb.csnerd.demo.domain.repositories.UserRepository;
+import com.tmb.csnerd.demo.domain.security.UserPrincipal;
+import com.tmb.csnerd.demo.domain.repositories.UserRoleRepository;
+import com.tmb.csnerd.demo.exceptions.user.UserNotFoundException;
+import com.tmb.csnerd.demo.utils.AuthUtils;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+import java.util.Set;
+
+@Service
+@RequiredArgsConstructor
+public class UserPrincipalService implements UserDetailsService {
+    private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(username));
+        return new UserPrincipal(user);
+    }
+
+    public Optional<UserPrincipal> getUserBySubject(String subject) {
+        Optional<UserPrincipal> userPrincipal
+                = userRepository.findBySubject(subject)
+                .map(UserPrincipal::new);
+        return userPrincipal;
+    }
+
+    @Transactional
+    public UserPrincipal createUserBySubjectAndEmail(String subject, String email) {
+        UserRole role = userRoleRepository.findByRoleCode("USER")
+                .orElseThrow(() -> new IllegalArgumentException("Role USER not found"));
+        User user = new User();
+        user.setEmail(email);
+        String username = AuthUtils.extractUsernameFromEmail(email);
+        user.setUsername(username);
+        user.setSubject(subject);
+        user.setActive(true);
+        user.setRole(role);
+        Set<PostsVote> votes = Set.of();
+        user.setVotes(votes);
+        return new UserPrincipal(userRepository.save(user));
+    }
+}

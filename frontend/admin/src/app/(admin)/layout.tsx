@@ -15,14 +15,14 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAuthenticated, needsUsername } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !isAuthenticated) {
       router.push("/signin");
     }
-  }, [isLoading, user, router]);
+  }, [isLoading, isAuthenticated, router]);
 
   if (isLoading) {
     return (
@@ -32,11 +32,11 @@ export default function AdminLayout({
     );
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return null;
   }
 
-  if (user && !user.username) {
+  if (needsUsername) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
         <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-sm border border-gray-200 dark:bg-gray-900 dark:border-gray-800">

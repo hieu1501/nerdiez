@@ -12,14 +12,15 @@ CREATE TABLE `nerdy`.`users` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `email` varchar(255) NULL UNIQUE,
-  `google_sub` varchar(255) NULL UNIQUE,
+  `subject` varchar(255) NULL UNIQUE,
   `role_id` integer
 );
 
 CREATE TABLE `nerdy`.`categories` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `slug_name` varchar(255) UNIQUE NOT NULL,
-  `name` varchar(255) NOT NULL
+  `name` varchar(255) NOT NULL,
+  `description` varchar(512) NULL
 );
 
 CREATE TABLE `nerdy`.`posts` (
@@ -51,13 +52,24 @@ CREATE TABLE `nerdy`.`posts_vote` (
 CREATE TABLE `nerdy`.`topics` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `slug_name` varchar(255) UNIQUE NOT NULL,
-  `name` varchar(255) NOT NULL
+  `name` varchar(255) NOT NULL,
+  `description` varchar(512) NULL,
+  `category_id` bigint
 );
 
 CREATE TABLE `nerdy`.`posts_topics` (
   `post_id` bigint,
   `topic_id` bigint,
   PRIMARY KEY (`post_id`, `topic_id`)
+);
+
+CREATE TABLE `nerdy`.`refresh_tokens` (
+  `id` bigint PRIMARY KEY AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `token_hash` char(64) UNIQUE NOT NULL,
+  `expires_at` timestamp NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `revoked_at` timestamp
 );
 
 ALTER TABLE `nerdy`.`users` ADD FOREIGN KEY (`role_id`) REFERENCES `nerdy`.`user_roles` (`role_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -75,3 +87,7 @@ ALTER TABLE `nerdy`.`posts_vote` ADD FOREIGN KEY (`post_id`) REFERENCES `nerdy`.
 ALTER TABLE `nerdy`.`posts_topics` ADD FOREIGN KEY (`post_id`) REFERENCES `nerdy`.`posts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `nerdy`.`posts_topics` ADD FOREIGN KEY (`topic_id`) REFERENCES `nerdy`.`topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `nerdy`.`refresh_tokens` ADD FOREIGN KEY (`user_id`) REFERENCES `nerdy`.`users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `nerdy`.`topics` ADD FOREIGN KEY (`category_id`) REFERENCES `nerdy`.`categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;

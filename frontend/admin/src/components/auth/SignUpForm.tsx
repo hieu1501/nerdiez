@@ -1,42 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
 import GoogleLoginButton from "./GoogleLoginButton";
 
 export default function SignUpForm() {
-  const { signUp, loginWithGoogle, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (!email.trim() || !password.trim()) {
-      setError("Email and password are required");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-    try {
-      await signUp(email, password);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
-    }
-  };
-
-  const handleGoogleSuccess = async (idToken: string) => {
-    setError("");
-    try {
-      await loginWithGoogle(idToken);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Google login failed");
-    }
-  };
 
   return (
     <div className="w-full max-w-md">
@@ -51,11 +22,14 @@ export default function SignUpForm() {
         </div>
 
         <div className="space-y-3">
-          <GoogleLoginButton onSuccess={handleGoogleSuccess} />
+          <GoogleLoginButton />
 
           <button
             type="button"
-            onClick={() => (window.location.href = "/api/auth/github")}
+            onClick={() =>
+              (window.location.href =
+                "/oauth2/authorization/keycloak?idp=github")
+            }
             className="flex items-center justify-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-full hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -76,7 +50,15 @@ export default function SignUpForm() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setError("Email/password sign up is not available");
+          }}
+          className="space-y-4"
+        >
           <div>
             <label
               htmlFor="email"
@@ -129,20 +111,11 @@ export default function SignUpForm() {
             </div>
           </div>
 
-          {error && (
-            <p className="text-sm text-red-500">{error}</p>
-          )}
-
           <button
             type="submit"
-            disabled={isLoading}
-            className="flex items-center justify-center w-full h-10 text-sm font-medium text-white transition-colors bg-brand-500 rounded-lg hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center w-full h-10 text-sm font-medium text-white transition-colors bg-brand-500 rounded-lg hover:bg-brand-600"
           >
-            {isLoading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              "Sign Up"
-            )}
+            Sign Up
           </button>
         </form>
 

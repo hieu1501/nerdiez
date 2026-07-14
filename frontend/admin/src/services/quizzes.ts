@@ -14,14 +14,14 @@ export interface QuizPayload {
 }
 
 export const quizzesService = {
-  getAll: () => api.get<Quiz[]>("/quizzes"),
+  getAll: () => api.get<Quiz[]>("/quizzes", false),
 
-  getById: (id: number) => api.get<Quiz>(`/quizzes/${id}`),
+  getById: (id: number) => api.get<Quiz>(`/quizzes/${id}`, false),
 
-  create: (data: QuizPayload) => api.post<Quiz>("/quizzes", data),
+  create: (data: QuizPayload) => api.post<Quiz>("/quizzes", data, true),
 
   update: (id: number, data: Partial<QuizPayload>) =>
-    api.patch<Quiz>(`/quizzes/${id}`, data),
+    api.patch<Quiz>(`/quizzes/${id}`, data, true),
 
-  delete: (id: number) => api.delete<void>(`/quizzes/${id}`),
+  delete: (id: number) => api.delete<void>(`/quizzes/${id}`, true),
 };

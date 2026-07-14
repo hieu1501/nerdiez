@@ -1,9 +1,9 @@
 package com.tmb.csnerd.demo.dto.post;
 
-import com.tmb.csnerd.demo.models.Category;
-import com.tmb.csnerd.demo.models.Topic;
+import com.tmb.csnerd.demo.domain.models.Category;
+import com.tmb.csnerd.demo.domain.models.Topic;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record PostItemDTO(
@@ -12,7 +12,7 @@ public record PostItemDTO(
     String content,
     String authorUsername,
     Category category,
-    LocalDateTime createdAt,
+    Instant createdAt,
     List<Topic> topics,
     String featuredImage,
     Integer upvoteCount,

@@ -17,14 +17,14 @@ export interface LessonPayload {
 }
 
 export const lessonsService = {
-  getAll: () => api.get<Lesson[]>("/lessons"),
+  getAll: () => api.get<Lesson[]>("/lessons", false),
 
-  getById: (id: number) => api.get<Lesson>(`/lessons/${id}`),
+  getById: (id: number) => api.get<Lesson>(`/lessons/${id}`, false),
 
-  create: (data: LessonPayload) => api.post<Lesson>("/lessons", data),
+  create: (data: LessonPayload) => api.post<Lesson>("/lessons", data, true),
 
   update: (id: number, data: Partial<LessonPayload>) =>
-    api.patch<Lesson>(`/lessons/${id}`, data),
+    api.patch<Lesson>(`/lessons/${id}`, data, true),
 
-  delete: (id: number) => api.delete<void>(`/lessons/${id}`),
+  delete: (id: number) => api.delete<void>(`/lessons/${id}`, true),
 };

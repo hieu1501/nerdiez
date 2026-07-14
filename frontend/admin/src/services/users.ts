@@ -15,14 +15,14 @@ export interface UserPayload {
 }
 
 export const usersService = {
-  getAll: () => api.get<User[]>("/users"),
+  getAll: () => api.get<User[]>("/users", true),
 
-  getById: (id: number) => api.get<User>(`/users/${id}`),
+  getById: (id: number) => api.get<User>(`/users/${id}`, true),
 
-  create: (data: UserPayload) => api.post<User>("/users", data),
+  create: (data: UserPayload) => api.post<User>("/users", data, true),
 
   update: (id: number, data: Partial<UserPayload>) =>
-    api.patch<User>(`/users/${id}`, data),
+    api.patch<User>(`/users/${id}`, data, true),
 
-  delete: (id: number) => api.delete<void>(`/users/${id}`),
+  delete: (id: number) => api.delete<void>(`/users/${id}`, true),
 };

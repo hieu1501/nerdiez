@@ -1,56 +1,62 @@
 package com.tmb.csnerd.demo.utils;
 
-import com.tmb.csnerd.demo.models.User;
-import com.tmb.csnerd.demo.security.UserPrincipal;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.stream.Collectors;
+import java.time.Duration;
+import java.util.Optional;
 
 @Component
 public class AuthUtils {
     @Getter
-    private final Long accessTokenExpireSeconds;
+    private static Long accessTokenExpireSeconds;
+    @Getter
+    private static Long refreshTokenExpireDays;
 
-    @Autowired
-    public AuthUtils(@Value("${app.auth.access-token-expire-seconds}") Long accessTokenExpireSeconds) {
-        this.accessTokenExpireSeconds = accessTokenExpireSeconds;
+    @Value("${app.auth.access-token-expire-seconds}")
+    public void setAccessTokenExpireSeconds(Long seconds) {
+        accessTokenExpireSeconds = seconds;
     }
 
-    public String extractUsernameFromEmail(String email) {
+    @Value("${app.auth.refresh-token-expire-days}")
+    public void setRefreshTokenExpireDays(Long days) {
+        refreshTokenExpireDays = days;
+    }
+
+    public static String extractUsernameFromEmail(String email) {
         return email.split("@")[0];
     }
 
-    public Authentication buildAuthentication(User user) {
-        UserPrincipal principal = new UserPrincipal(user);
-        return new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+    public static Optional<Cookie> getCookie(HttpServletRequest request, String name) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals(name)) {
+                    return Optional.of(cookie);
+                }
+            }
+        }
+        return Optional.empty();
     }
 
-    public String generateToken(Authentication authentication, JwtEncoder jwtEncoder) {
-        Instant now = Instant.now();
-        String scope = authentication.getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(" "));
+    public static void addCookie(HttpServletResponse response, String name, String value, Long maxAgeInSeconds, String path, boolean sameSiteStrict) {
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .httpOnly(true).secure(true).sameSite(sameSiteStrict ? "Strict" : "Lax").path(path)
+                .maxAge(Duration.ofSeconds(maxAgeInSeconds)).build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
 
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("self")
-                .issuedAt(now)
-                .expiresAt(now.plus(accessTokenExpireSeconds, ChronoUnit.SECONDS))
-                .subject(authentication.getName())
-                .claim("scope", scope)
-                .build();
-
-        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    public static void deleteCookie(HttpServletResponse response, String name) {
+        ResponseCookie cookie = ResponseCookie.from(name, "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0).build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }

@@ -1,10 +1,8 @@
 package com.tmb.csnerd.demo;
 
-import com.tmb.csnerd.demo.security.RsaKeyConfigProperties;
+import com.tmb.csnerd.demo.domain.security.RsaKeyConfigProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
