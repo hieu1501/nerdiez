@@ -63,6 +63,13 @@ CREATE TABLE `nerdy`.`posts_topics` (
   PRIMARY KEY (`post_id`, `topic_id`)
 );
 
+CREATE TABLE `nerdy`.`images` (
+  `path` varchar(45) PRIMARY KEY NOT NULL,
+  `post_id` bigint,
+  `description` varchar(255) NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE `nerdy`.`refresh_tokens` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
@@ -87,6 +94,8 @@ ALTER TABLE `nerdy`.`posts_vote` ADD FOREIGN KEY (`post_id`) REFERENCES `nerdy`.
 ALTER TABLE `nerdy`.`posts_topics` ADD FOREIGN KEY (`post_id`) REFERENCES `nerdy`.`posts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `nerdy`.`posts_topics` ADD FOREIGN KEY (`topic_id`) REFERENCES `nerdy`.`topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `nerdy`.`images` ADD FOREIGN KEY (`post_id`) REFERENCES `nerdy`.`posts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `nerdy`.`refresh_tokens` ADD FOREIGN KEY (`user_id`) REFERENCES `nerdy`.`users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 

@@ -4,8 +4,7 @@ export interface Topic {
   topicId: number;
   name: string;
   description?: string;
-  categoryId?: number;
-  categoryName?: string;
+  category: { categoryId: number; name: string };
 }
 
 export const topicsService = {
@@ -14,6 +13,6 @@ export const topicsService = {
   create: (data: { name: string; description?: string; categoryId: number }) =>
     api.post<Topic>("/topics", data, true),
   update: (topicId: number, data: { name?: string; description?: string; categoryId?: number }) =>
-    api.patch<Topic>(`/topics/${topicId}`, data, true),
+    api.put<Topic>(`/topics/${topicId}`, data, true),
   delete: (topicId: number) => api.delete<void>(`/topics/${topicId}`, true),
 };

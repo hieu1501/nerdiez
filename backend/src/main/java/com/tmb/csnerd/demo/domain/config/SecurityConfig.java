@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/error/**").permitAll();
                     auth.requestMatchers("/api/auth/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/media/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll();
                     auth.requestMatchers("/admin/api/**").hasAuthority("SCOPE_ADMIN");
                     auth.anyRequest().authenticated();

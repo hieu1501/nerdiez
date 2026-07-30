@@ -8,6 +8,11 @@ import com.tmb.csnerd.demo.exceptions.auth.InvalidTokenException;
 import com.tmb.csnerd.demo.utils.AuthUtils;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -24,6 +29,21 @@ import java.util.Optional;
 @AllArgsConstructor
 public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
+    private final Logger log = LoggerFactory.getLogger(RefreshTokenService.class);
+
+    @Scheduled(cron = "${app.schedule.refresh-token-cleanup}")
+    @Transactional
+    public void deleteStaleTokenOnSchedule() {
+        int count = refreshTokenRepository.deleteStaleTokens(Instant.now());
+        log.info("Deleted " + count + " stale refresh tokens");
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void deleteStaleTokenOnServerStart() {
+        int count = refreshTokenRepository.deleteStaleTokens(Instant.now());
+        log.info("Deleted " + count + " stale refresh tokens");
+    }
 
     public RefreshToken validate(String rawToken) {
         RefreshToken token = refreshTokenRepository

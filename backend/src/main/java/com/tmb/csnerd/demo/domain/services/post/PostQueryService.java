@@ -1,10 +1,13 @@
 package com.tmb.csnerd.demo.domain.services.post;
 
-import com.tmb.csnerd.demo.dto.post.AdminPostItemDTO;
-import com.tmb.csnerd.demo.dto.post.PostItemDTO;
+import com.tmb.csnerd.demo.dto.post.AdminPostBriefDTO;
+import com.tmb.csnerd.demo.dto.post.AdminPostDetailDTO;
+import com.tmb.csnerd.demo.dto.post.PublicPostDetailDTO;
 import com.tmb.csnerd.demo.domain.models.Post;
 import com.tmb.csnerd.demo.domain.repositories.PostRepository;
+import com.tmb.csnerd.demo.utils.MediaUtils;
 import lombok.AllArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
@@ -12,105 +15,50 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
 @Service
-public class PostQueryService {
+public class PostQueryService extends PostBaseService{
     private final PostRepository postRepository;
 
-    public List<AdminPostItemDTO> getAllPostsForAdmin() {
+    public PostQueryService(PostRepository postRepository, MediaUtils mediaUtils) {
+        super(mediaUtils);
+        this.postRepository = postRepository;
+    }
+
+    @Cacheable(value = "post-admin", key = "'all'")
+    public List<AdminPostBriefDTO> getAllPostsForAdmin() {
         List<Post> posts = postRepository.getAllArticlesForAdmin();
-        List<Long> postIds = posts.stream().map(Post::getId).toList();
-        Map<Long, Pair<Integer, Integer>> votesByPostIds = postRepository
-                .findVoteCountsByPostIds(postIds)
-                .stream()
-                .filter(c -> c.length == 3)
-                .collect(Collectors.toMap(c -> (Long) c[0],  c -> getVoteCount(c[1], c[2])));
-
         return posts.stream()
-                .map(p -> convertToAdminPostItemDTO(p, votesByPostIds.get(p.getId())))
+                .map(this::convertToAdminPostBriefDTO)
                 .toList();
     }
 
-    public List<PostItemDTO> findMostRecentActivePost() {
-        List<Post> posts = postRepository.findMostRecentActivePost();
-        List<Long> postIds = posts.stream().map(Post::getId).toList();
-        Map<Long, Pair<Integer, Integer>> votesByPostIds = postRepository
-                .findVoteCountsByPostIds(postIds)
-                .stream()
-                .filter(c -> c.length == 3)
-                .collect(Collectors.toMap(c -> (Long) c[0],  c -> getVoteCount(c[1], c[2])));
-
+    public List<PublicPostDetailDTO> findRecentActivePosts() {
+        List<Post> posts = postRepository.findCreatedDescActivePosts();
         return posts.stream()
-                .map(p -> convertToPostItemDTO(p, votesByPostIds.get(p.getId())))
+                .map(this::convertToPublicPostDetailDTO)
                 .toList();
     }
 
-    public List<PostItemDTO> findMostUpvotedActivePost() {
-        List<Post> posts = postRepository.findMostUpvotedActivePost();
-        List<Long> postIds = posts.stream().map(Post::getId).toList();
-        Map<Long, Pair<Integer, Integer>> votesByPostIds = postRepository
-                .findVoteCountsByPostIds(postIds)
-                .stream()
-                .filter(c -> c.length == 3)
-                .collect(Collectors.toMap(c -> (Long) c[0],  c -> getVoteCount(c[1], c[2])));
+    public List<PublicPostDetailDTO> findUpvotedDescActivePosts() {
+        List<Post> posts = postRepository.findUpvotesDescActivePosts();
         return posts.stream()
-                .map(p -> convertToPostItemDTO(p, votesByPostIds.get(p.getId())))
+                .map(this::convertToPublicPostDetailDTO)
                 .toList();
     }
 
-    public PostItemDTO findArticle(Long id) {
+    @Cacheable(value = "post-admin", key = "#id")
+    public AdminPostDetailDTO findPostForAdmin(Long id) {
+        Post post = postRepository.findPostByPostId(id)
+                .orElse(null);
+        if (post == null) return null;
+        return convertToAdminPostDetailDTO(post);
+    }
+
+    @Cacheable(value = "post-public", key = "#id")
+    public PublicPostDetailDTO findPublicPost(Long id) {
         Post post = postRepository.findActivePostByPostId(id)
                 .orElse(null);
         if (post == null) return null;
-        Map<Long, Pair<Integer, Integer>> votesByPostIds = postRepository
-                .findVoteCountsByPostIds(List.of(post.getId()))
-                .stream()
-                .filter(c -> c.length == 3)
-                .collect(Collectors.toMap(c -> (Long) c[0],  c -> getVoteCount(c[1], c[2])));
-        return convertToPostItemDTO(post, votesByPostIds.get(post.getId()));
-    }
-
-    private PostItemDTO convertToPostItemDTO(Post post, Pair<Integer, Integer> voteCounts) {
-        return new PostItemDTO(
-            post.getTitle(),
-            post.getSlug(),
-            post.getContent(),
-            post.getAuthor().getUsername(),
-            post.getCategory(),
-            post.getCreatedAt(),
-            post.getTopics(),
-            post.getPostMetadata().getFeaturedImage(),
-            voteCounts != null ? voteCounts.getFirst() : 0,
-            voteCounts != null ? voteCounts.getSecond() : 0
-        );
-    }
-
-    private AdminPostItemDTO convertToAdminPostItemDTO(Post post, Pair<Integer, Integer> voteCounts) {
-        return new AdminPostItemDTO(
-                post.getTitle(),
-                post.getSlug(),
-                post.getContent(),
-                post.getAuthor().getUsername(),
-                post.getCategory(),
-                post.getCreatedAt(),
-                post.getTopics(),
-                post.getPostMetadata().getFeaturedImage(),
-                voteCounts != null ? voteCounts.getFirst() : 0,
-                voteCounts != null ? voteCounts.getSecond() : 0,
-                post.getIsActive()
-        );
-    }
-
-    // First value is upvote, second is downvote
-    private Pair<Integer, Integer> getVoteCount(Object upvoteCount, Object downvoteCount) {
-        int upvotes = 0;
-        int downvotes = 0;
-        if (upvoteCount instanceof Integer) {
-            upvotes = (Integer) upvoteCount;
-        }
-        if (downvoteCount instanceof Integer) {
-            upvotes = (Integer) downvoteCount;
-        }
-        return Pair.of(upvotes, downvotes);
+        return convertToPublicPostDetailDTO(post);
     }
 }

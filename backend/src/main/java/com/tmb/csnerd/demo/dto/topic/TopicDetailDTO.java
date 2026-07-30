@@ -1,10 +1,11 @@
 package com.tmb.csnerd.demo.dto.topic;
 
-public record TopicResponseDTO(
+import com.tmb.csnerd.demo.dto.category.CategoryRefDTO;
+
+public record TopicDetailDTO(
     Long topicId,
     String name,
     String slugName,
     String description,
-    Long categoryId,
-    String categoryName
+    CategoryRefDTO category
 ) { }

@@ -4,6 +4,8 @@ import { useState, FormEvent, useEffect } from "react";
 import { topicsService, Topic } from "@/services/topics";
 import { categoriesService, Category } from "@/services/categories";
 import { ApiError } from "@/services/api";
+import { useToast } from "@/components/ui/toast/useToast";
+import ToastContainer from "@/components/ui/toast/Toast";
 import PageHeader from "@/components/management/PageHeader";
 import { Modal } from "@/components/ui/modal";
 import Label from "@/components/form/Label";
@@ -23,22 +25,15 @@ export default function TopicsPage() {
   const [items, setItems] = useState<Topic[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Topic | null>(null);
   const [page, setPage] = useState(1);
-  const [toast, setToast] = useState<string | null>(null);
   const pageSize = 5;
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
 
   const fetch = async () => {
     try {
       setLoading(true);
-      setError("");
       const [topicsData, categoriesData] = await Promise.all([
         topicsService.getAll(),
         categoriesService.getAll(),
@@ -46,11 +41,8 @@ export default function TopicsPage() {
       setItems(topicsData);
       setCategories(categoriesData);
     } catch (e) {
-      if (e instanceof ApiError) {
-        setError(`Failed to load data: ${e.message}`);
-      } else {
-        setError("Cannot connect to server. Please ensure the API is running.");
-      }
+      const msg = e instanceof ApiError ? e.message : "Cannot connect to server. Please ensure the API is running.";
+      toast.error(`Failed to load data: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -75,7 +67,7 @@ export default function TopicsPage() {
       setModalOpen(false);
       setEditing(null);
     } catch {
-      alert("Failed to save topic.");
+      toast.error("Failed to save topic.");
     }
   };
 
@@ -85,7 +77,7 @@ export default function TopicsPage() {
       await topicsService.delete(topicId);
       await fetch();
     } catch {
-      alert("Failed to delete topic.");
+      toast.error("Failed to delete topic.");
     }
   };
   const closeModal = () => { setModalOpen(false); setEditing(null); };
@@ -95,14 +87,11 @@ export default function TopicsPage() {
 
   return (
     <div>
-      <PageHeader title="Topics" onAdd={() => { if (categories.length === 0) { showToast("Please create a category first before adding topics."); return; } setEditing(null); setModalOpen(true); }} addLabel="Add Topic" disabled={categories.length === 0} />
+      <ToastContainer toasts={toast.toasts} onRemove={toast.remove} />
+      <PageHeader title="Topics" onAdd={() => { if (categories.length === 0) { toast.warning("Please create a category first before adding topics."); return; } setEditing(null); setModalOpen(true); }} addLabel="Add Topic" disabled={categories.length === 0} />
       <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">Loading...</div>
-        ) : error ? (
-          <div className="p-6">
-            <div className="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-400">{error}</div>
-          </div>
         ) : items.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">
             {categories.length === 0 ? "No categories found. Please create a category first." : "No topics found."}
@@ -125,7 +114,7 @@ export default function TopicsPage() {
                       <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">{item.name}</span>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{item.description || "—"}</TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{item.categoryName || "—"}</TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{item.category ? item.category.name : "—"}</TableCell>
                     <TableCell className="px-4 py-3 text-end">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => handleEdit(item)} className="text-brand-500 hover:text-brand-600 text-sm font-medium">Edit</button>
@@ -161,13 +150,13 @@ export default function TopicsPage() {
               <select
                 id="categoryId"
                 name="categoryId"
-                defaultValue={editing?.categoryId ?? ""}
+                defaultValue={editing?.category ? editing.category.categoryId : ""}
                 required
                 className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
               >
                 <option value="" disabled>Select a category</option>
                 {categories.map((cat) => (
-                  <option key={cat.name} value={cat.categoryId}>{cat.name}</option>
+                  <option key={cat.categoryId} value={cat.categoryId}>{cat.name}</option>
                 ))}
               </select>
             </div>
@@ -178,11 +167,6 @@ export default function TopicsPage() {
           </div>
         </form>
       </Modal>
-      {toast && (
-        <div className="fixed top-4 right-4 z-[99999] animate-slide-in rounded-lg bg-warning-500 px-5 py-3 text-sm font-medium text-white shadow-lg">
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

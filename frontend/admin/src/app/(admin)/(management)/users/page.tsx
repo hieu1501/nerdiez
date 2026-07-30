@@ -3,6 +3,8 @@
 import { useState, FormEvent, useEffect } from "react";
 import { usersService, User } from "@/services/users";
 import { ApiError } from "@/services/api";
+import { useToast } from "@/components/ui/toast/useToast";
+import ToastContainer from "@/components/ui/toast/Toast";
 import PageHeader from "@/components/management/PageHeader";
 import { Modal } from "@/components/ui/modal";
 import Form from "@/components/form/Form";
@@ -29,7 +31,7 @@ const roles = [
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const [page, setPage] = useState(1);
@@ -38,15 +40,11 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      setError("");
       const data = await usersService.getAll();
       setUsers(data);
     } catch (e) {
-      if (e instanceof ApiError) {
-        setError(`Failed to load users: ${e.message}`);
-      } else {
-        setError("Cannot connect to server. Please ensure the API is running.");
-      }
+      const msg = e instanceof ApiError ? e.message : "Cannot connect to server. Please ensure the API is running.";
+      toast.error(`Failed to load users: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -75,7 +73,7 @@ export default function UsersPage() {
       setModalOpen(false);
       setEditing(null);
     } catch {
-      alert("Failed to save user. Check server connection.");
+      toast.error("Failed to save user. Check server connection.");
     }
   };
 
@@ -89,7 +87,7 @@ export default function UsersPage() {
       await usersService.delete(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
     } catch {
-      alert("Failed to delete user. Check server connection.");
+      toast.error("Failed to delete user. Check server connection.");
     }
   };
 
@@ -103,16 +101,11 @@ export default function UsersPage() {
 
   return (
     <div>
+      <ToastContainer toasts={toast.toasts} onRemove={toast.remove} />
       <PageHeader title="Users" onAdd={() => { setEditing(null); setModalOpen(true); }} addLabel="Add User" />
       <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">Loading...</div>
-        ) : error ? (
-          <div className="p-6">
-            <div className="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-400">
-              {error}
-            </div>
-          </div>
         ) : users.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">No users found.</div>
         ) : (

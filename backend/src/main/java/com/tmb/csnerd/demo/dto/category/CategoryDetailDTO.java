@@ -1,6 +1,6 @@
 package com.tmb.csnerd.demo.dto.category;
 
-public record CategoryResponseDTO(
+public record CategoryDetailDTO(
     Long categoryId,
     String name,
     String slugName,

@@ -306,6 +306,11 @@
 }
 
 /* TipTap editor heading styles */
+.ProseMirror {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  text-align: justify;
+}
 .ProseMirror h1 {
   font-size: 2em;
   font-weight: 700;
@@ -328,6 +333,119 @@
   line-height: 1.4;
   margin: 0.83em 0;
   color: inherit;
+}
+
+/* Content image sizing - maintain aspect ratio */
+.ProseMirror img {
+  max-width: 100%;
+  height: auto !important;
+  display: block;
+  margin: 1em auto;
+  border-radius: 0.5rem;
+}
+
+/* Editor: figure with caption */
+.ProseMirror figure.image-figure {
+  margin: 1.5em 0;
+  text-align: center;
+}
+.ProseMirror figure.image-figure img {
+  border-radius: 0.5rem;
+}
+.ProseMirror figure.image-figure figcaption {
+  margin-top: 0.4em;
+  font-size: 0.875em;
+  color: #6b7280;
+  text-align: center;
+}
+
+.prose img {
+  max-width: 100%;
+  height: auto !important;
+  display: block;
+  margin: 1.5em auto;
+  border-radius: 0.5rem;
+}
+
+/* View page: heading styles (no @tailwindcss/typography installed) */
+.prose {
+  text-align: justify;
+}
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  font-weight: 600 !important;
+  color: inherit !important;
+}
+.prose h1 {
+  font-size: 2em !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  margin: 0.67em 0 !important;
+}
+.prose h2 {
+  font-size: 1.5em !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin: 0.75em 0 !important;
+}
+.prose h3 {
+  font-size: 1.25em !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin: 0.83em 0 !important;
+}
+.prose p {
+  margin: 1em 0;
+  line-height: 1.75;
+}
+.prose a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+.prose blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1em;
+  margin: 1em 0;
+  color: #6b7280;
+}
+.prose ul, .prose ol {
+  padding-left: 1.5em;
+  margin: 1em 0;
+}
+.prose li {
+  margin: 0.25em 0;
+}
+.prose strong {
+  font-weight: 600;
+}
+
+/* View page: figure with caption */
+.prose figure.image-figure {
+  margin: 1.5em 0;
+  text-align: center;
+}
+.prose figure.image-figure img {
+  border-radius: 0.5rem;
+}
+.prose figure.image-figure figcaption {
+  margin-top: 0.4em;
+  font-size: 0.875em;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* Dark mode overrides */
+.dark .prose {
+  color: #e5e7eb;
+}
+.dark .prose a {
+  color: #60a5fa;
+}
+.dark .prose blockquote {
+  border-left-color: #4b5563;
+  color: #9ca3af;
+}
+.dark .prose figure.image-figure figcaption {
+  color: #9ca3af;
 }
 
 /* third-party libraries CSS */
@@ -787,4 +905,13 @@ span.flatpickr-weekday,
     0 1px 2px 0 rgba(16, 24, 40, 0.06);
   opacity: 0.8;
   cursor: grabbing; /* Changes the cursor to indicate dragging */
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
 }

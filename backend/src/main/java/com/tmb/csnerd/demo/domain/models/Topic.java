@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -32,4 +33,14 @@ public class Topic {
 
     @ManyToMany(mappedBy = "topics", fetch = FetchType.LAZY)
     private Set<Post> posts;
+
+    public void addPost(Post post) {
+        if (posts == null) posts = new HashSet<>();
+        posts.add(post);
+    }
+
+    public void removePost(Post post) {
+        if (posts == null) return;
+        posts.remove(post);
+    }
 }

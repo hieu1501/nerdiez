@@ -11,7 +11,7 @@ import lombok.Setter;
 @Table(name = "posts_metadata")
 public class PostMetadata {
     @Id
-    @Column(name = "post_id", nullable = false)
+    @Column(name = "post_id")
     private Long id;
 
     @Column(name = "description")
@@ -21,6 +21,7 @@ public class PostMetadata {
     private String featuredImage;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @PrimaryKeyJoinColumn
+    @MapsId
+    @JoinColumn(name = "post_id")
     private Post post;
 }

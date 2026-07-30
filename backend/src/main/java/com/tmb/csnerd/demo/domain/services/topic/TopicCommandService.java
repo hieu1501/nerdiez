@@ -2,22 +2,21 @@ package com.tmb.csnerd.demo.domain.services.topic;
 
 import com.tmb.csnerd.demo.domain.models.Category;
 import com.tmb.csnerd.demo.domain.services.category.CategoryQueryService;
-import com.tmb.csnerd.demo.dto.topic.CreateTopicDTO;
-import com.tmb.csnerd.demo.dto.topic.ReplaceTopicDTO;
-import com.tmb.csnerd.demo.dto.topic.TopicResponseDTO;
-import com.tmb.csnerd.demo.dto.topic.UpdateTopicDTO;
+import com.tmb.csnerd.demo.dto.category.CategoryRefDTO;
+import com.tmb.csnerd.demo.dto.topic.CreateTopicRequestDTO;
+import com.tmb.csnerd.demo.dto.topic.ReplaceTopicRequestDTO;
+import com.tmb.csnerd.demo.dto.topic.TopicDetailDTO;
+import com.tmb.csnerd.demo.dto.topic.UpdateTopicRequestDTO;
 import com.tmb.csnerd.demo.exceptions.ConflictStatusException;
 import com.tmb.csnerd.demo.exceptions.category.CategoryNotFoundException;
 import com.tmb.csnerd.demo.exceptions.topic.TopicNotFoundException;
 import com.tmb.csnerd.demo.domain.models.Topic;
 import com.tmb.csnerd.demo.domain.repositories.PostRepository;
 import com.tmb.csnerd.demo.domain.repositories.TopicRepository;
-import com.tmb.csnerd.demo.domain.repositories.UserRepository;
 import com.tmb.csnerd.demo.utils.SlugifyUtils;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.parameters.P;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -27,9 +26,10 @@ public class TopicCommandService {
     private final PostRepository postRepository;
     private final CategoryQueryService categoryQueryService;
 
+    @CacheEvict(value = "topics", allEntries = true)
     @Transactional
-    public TopicResponseDTO createTopic(CreateTopicDTO request) {
-        Category category = categoryQueryService.getCategoryById(request.categoryId()).orElseThrow(() -> new CategoryNotFoundException(request.categoryId()));
+    public TopicDetailDTO createTopic(CreateTopicRequestDTO request) {
+        Category category = categoryQueryService.getCategoryById(request.categoryId());
         Topic topic = new Topic();
         topic.setName(request.name());
         topic.setSlugName(SlugifyUtils.slugify(request.name()));
@@ -38,16 +38,18 @@ public class TopicCommandService {
         return convertToTopicResponseDTO(topicRepository.save(topic));
     }
 
+    @CacheEvict(value = "topics", allEntries = true)
     @Transactional
-    public TopicResponseDTO patchTopic(Long topicId, UpdateTopicDTO request) {
+    public TopicDetailDTO patchTopic(Long topicId, UpdateTopicRequestDTO request) {
         Topic topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new TopicNotFoundException(topicId));
         modifyTopicIfChanged(topic, request.name(), request.description(), request.categoryId());
         return convertToTopicResponseDTO(topicRepository.save(topic));
     }
 
+    @CacheEvict(value = "topics", allEntries = true)
     @Transactional
-    public TopicResponseDTO putTopic(Long topicId, ReplaceTopicDTO request) {
+    public TopicDetailDTO putTopic(Long topicId, ReplaceTopicRequestDTO request) {
         Topic topic = topicRepository.findById(topicId)
                 .orElse(null);
         if (topic == null) {
@@ -57,6 +59,7 @@ public class TopicCommandService {
         return convertToTopicResponseDTO(topicRepository.save(topic));
     }
 
+    @CacheEvict(value = "topics", allEntries = true)
     @Transactional
     public void deleteTopic(Long topicId) {
         Topic topic = topicRepository.findById(topicId)
@@ -79,16 +82,14 @@ public class TopicCommandService {
                 topic.setDescription(newDescription);
             }
         }
-        if (topic.getCategory() == null) {
-            Category category = categoryQueryService.getCategoryById(newCategoryId).orElseThrow(() -> new CategoryNotFoundException(newCategoryId));
+        if (topic.getCategory() == null || !topic.getCategory().getId().equals(newCategoryId)) {
+            Category category = categoryQueryService.getCategoryById(newCategoryId);
             topic.setCategory(category);
-        }
-        else if (!topic.getCategory().getId().equals(newCategoryId)) {
-            categoryQueryService.getCategoryById(newCategoryId).ifPresent(topic::setCategory);
         }
     }
 
-    TopicResponseDTO convertToTopicResponseDTO(Topic topic) {
-        return new TopicResponseDTO(topic.getId(), topic.getName(), topic.getSlugName(), topic.getDescription(), topic.getCategory().getId(), topic.getCategory().getName());
+    TopicDetailDTO convertToTopicResponseDTO(Topic topic) {
+        CategoryRefDTO categoryRef = new CategoryRefDTO(topic.getCategory().getId(), topic.getCategory().getName());
+        return new TopicDetailDTO(topic.getId(), topic.getName(), topic.getSlugName(), topic.getDescription(), categoryRef);
     }
 }

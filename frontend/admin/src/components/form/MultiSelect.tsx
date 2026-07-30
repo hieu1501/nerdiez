@@ -95,7 +95,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                 ) : (
                   <input
                     placeholder="Select option"
-                    className="w-full h-full p-1 pr-2 text-sm bg-transparent border-0 outline-hidden appearance-none placeholder:text-gray-800 focus:border-0 focus:outline-hidden focus:ring-0 dark:placeholder:text-white/90"
+                    className="w-full h-full p-1 pr-2 text-sm bg-transparent border-0 outline-hidden appearance-none text-gray-800 placeholder:text-gray-800 focus:border-0 focus:outline-hidden focus:ring-0 dark:text-white/90 dark:placeholder:text-white/90"
                     readOnly
                     value="Select option"
                   />
@@ -137,13 +137,13 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                 {options.map((option, index) => (
                   <div key={index}>
                     <div
-                      className={`hover:bg-primary/5 w-full cursor-pointer rounded-t border-b border-gray-200 dark:border-gray-800`}
+                      className={`hover:bg-primary/5 dark:hover:bg-gray-800 w-full cursor-pointer rounded-t border-b border-gray-200 dark:border-gray-800`}
                       onClick={() => handleSelect(option.value)}
                     >
                       <div
                         className={`relative flex w-full items-center p-2 pl-2 ${
                           selectedOptions.includes(option.value)
-                            ? "bg-primary/10"
+                            ? "bg-primary/10 dark:bg-gray-700"
                             : ""
                         }`}
                       >

@@ -3,6 +3,8 @@
 import { useState, FormEvent, useEffect } from "react";
 import { quizzesService, Quiz } from "@/services/quizzes";
 import { ApiError } from "@/services/api";
+import { useToast } from "@/components/ui/toast/useToast";
+import ToastContainer from "@/components/ui/toast/Toast";
 import PageHeader from "@/components/management/PageHeader";
 import { Modal } from "@/components/ui/modal";
 import Form from "@/components/form/Form";
@@ -22,7 +24,7 @@ import Pagination from "@/components/tables/Pagination";
 export default function QuizzesPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Quiz | null>(null);
   const [page, setPage] = useState(1);
@@ -31,15 +33,11 @@ export default function QuizzesPage() {
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
-      setError("");
       const data = await quizzesService.getAll();
       setQuizzes(data);
     } catch (e) {
-      if (e instanceof ApiError) {
-        setError(`Failed to load quizzes: ${e.message}`);
-      } else {
-        setError("Cannot connect to server. Please ensure the API is running.");
-      }
+      const msg = e instanceof ApiError ? e.message : "Cannot connect to server. Please ensure the API is running.";
+      toast.error(`Failed to load quizzes: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -67,7 +65,7 @@ export default function QuizzesPage() {
       setModalOpen(false);
       setEditing(null);
     } catch {
-      alert("Failed to save quiz. Check server connection.");
+      toast.error("Failed to save quiz. Check server connection.");
     }
   };
 
@@ -81,7 +79,7 @@ export default function QuizzesPage() {
       await quizzesService.delete(id);
       setQuizzes((prev) => prev.filter((q) => q.id !== id));
     } catch {
-      alert("Failed to delete quiz. Check server connection.");
+      toast.error("Failed to delete quiz. Check server connection.");
     }
   };
 
@@ -95,16 +93,11 @@ export default function QuizzesPage() {
 
   return (
     <div>
+      <ToastContainer toasts={toast.toasts} onRemove={toast.remove} />
       <PageHeader title="Quizzes" onAdd={() => { setEditing(null); setModalOpen(true); }} addLabel="Add Quiz" />
       <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">Loading...</div>
-        ) : error ? (
-          <div className="p-6">
-            <div className="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-400">
-              {error}
-            </div>
-          </div>
         ) : quizzes.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">No quizzes found.</div>
         ) : (

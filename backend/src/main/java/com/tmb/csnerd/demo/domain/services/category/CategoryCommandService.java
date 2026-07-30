@@ -1,9 +1,9 @@
 package com.tmb.csnerd.demo.domain.services.category;
 
-import com.tmb.csnerd.demo.dto.category.CategoryResponseDTO;
-import com.tmb.csnerd.demo.dto.category.CreateCategoryDTO;
-import com.tmb.csnerd.demo.dto.category.ReplaceCategoryDTO;
-import com.tmb.csnerd.demo.dto.category.UpdateCategoryDTO;
+import com.tmb.csnerd.demo.dto.category.CategoryDetailDTO;
+import com.tmb.csnerd.demo.dto.category.CreateCategoryRequestDTO;
+import com.tmb.csnerd.demo.dto.category.ReplaceCategoryRequestDTO;
+import com.tmb.csnerd.demo.dto.category.UpdateCategoryRequestDTO;
 import com.tmb.csnerd.demo.exceptions.ConflictStatusException;
 import com.tmb.csnerd.demo.exceptions.category.CategoryNotFoundException;
 import com.tmb.csnerd.demo.domain.models.Category;
@@ -12,6 +12,7 @@ import com.tmb.csnerd.demo.domain.repositories.PostRepository;
 import com.tmb.csnerd.demo.utils.SlugifyUtils;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 @AllArgsConstructor
@@ -20,8 +21,9 @@ public class CategoryCommandService {
     private final CategoryRepository categoryRepository;
     private final PostRepository postRepository;
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
-    public CategoryResponseDTO createCategory(CreateCategoryDTO request) {
+    public CategoryDetailDTO createCategory(CreateCategoryRequestDTO request) {
         Category category = new Category();
         category.setName(request.name());
         category.setSlugName(SlugifyUtils.slugify(request.name()));
@@ -29,16 +31,18 @@ public class CategoryCommandService {
         return convertToCategoryDTO(categoryRepository.save(category));
     }
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
-    public CategoryResponseDTO patchCategory(Long categoryId, UpdateCategoryDTO request) {
+    public CategoryDetailDTO patchCategory(Long categoryId, UpdateCategoryRequestDTO request) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new CategoryNotFoundException(categoryId));
         modifyCategoryIfChanged(category, request.name(), request.description());
         return convertToCategoryDTO(categoryRepository.save(category));
     }
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
-    public CategoryResponseDTO putCategory(Long categoryId, ReplaceCategoryDTO request) {
+    public CategoryDetailDTO putCategory(Long categoryId, ReplaceCategoryRequestDTO request) {
         Category category = categoryRepository.findById(categoryId)
                 .orElse(null);
         if (category == null) {
@@ -48,6 +52,7 @@ public class CategoryCommandService {
         return convertToCategoryDTO(categoryRepository.save(category));
     }
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
     public void deleteCategory(Long categoryId) {
         Category category = categoryRepository.findById(categoryId)
@@ -73,7 +78,7 @@ public class CategoryCommandService {
         }
     }
 
-    private CategoryResponseDTO convertToCategoryDTO(Category category) {
-        return new CategoryResponseDTO(category.getId(), category.getName(), category.getSlugName(), category.getDescription());
+    private CategoryDetailDTO convertToCategoryDTO(Category category) {
+        return new CategoryDetailDTO(category.getId(), category.getName(), category.getSlugName(), category.getDescription());
     }
 }

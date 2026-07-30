@@ -1,11 +1,10 @@
 package com.tmb.csnerd.demo.admin.controllers;
 
-import com.tmb.csnerd.demo.dto.topic.CreateTopicDTO;
-import com.tmb.csnerd.demo.dto.topic.ReplaceTopicDTO;
-import com.tmb.csnerd.demo.dto.topic.TopicResponseDTO;
-import com.tmb.csnerd.demo.dto.topic.UpdateTopicDTO;
+import com.tmb.csnerd.demo.dto.topic.CreateTopicRequestDTO;
+import com.tmb.csnerd.demo.dto.topic.ReplaceTopicRequestDTO;
+import com.tmb.csnerd.demo.dto.topic.TopicDetailDTO;
+import com.tmb.csnerd.demo.dto.topic.UpdateTopicRequestDTO;
 import com.tmb.csnerd.demo.domain.services.topic.TopicCommandService;
-import com.tmb.csnerd.demo.domain.services.topic.TopicQueryService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
@@ -19,29 +18,29 @@ public class AdminTopicController {
     private final TopicCommandService topicCommandService;
 
     @PostMapping(
-            consumes = MediaType.APPLICATION_JSON_VALUE
+        consumes = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<TopicResponseDTO> createTopic(@Valid @RequestBody CreateTopicDTO createTopicDTO) {
-        TopicResponseDTO topicResponseDTO = topicCommandService.createTopic(createTopicDTO);
-        return ResponseEntity.ok(topicResponseDTO);
+    public ResponseEntity<TopicDetailDTO> createTopic(@Valid @RequestBody CreateTopicRequestDTO createTopicRequestDTO) {
+        TopicDetailDTO topicDetailDTO = topicCommandService.createTopic(createTopicRequestDTO);
+        return ResponseEntity.ok(topicDetailDTO);
     }
 
     @PutMapping(
-            path = "/{id}",
-            consumes = MediaType.APPLICATION_JSON_VALUE
+        path = "/{id}",
+        consumes = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<TopicResponseDTO> putTopic(@PathVariable Long id, @Valid @RequestBody ReplaceTopicDTO replaceTopicDTO) {
-        TopicResponseDTO topicResponseDTO = topicCommandService.putTopic(id, replaceTopicDTO);
-        return ResponseEntity.ok(topicResponseDTO);
+    public ResponseEntity<TopicDetailDTO> putTopic(@PathVariable Long id, @Valid @RequestBody ReplaceTopicRequestDTO replaceTopicRequestDTO) {
+        TopicDetailDTO topicDetailDTO = topicCommandService.putTopic(id, replaceTopicRequestDTO);
+        return ResponseEntity.ok(topicDetailDTO);
     }
 
     @PatchMapping(
-            path = "/{id}",
-            consumes = MediaType.APPLICATION_JSON_VALUE
+        path = "/{id}",
+        consumes = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<TopicResponseDTO> patchTopic(@PathVariable Long id, @Valid @RequestBody UpdateTopicDTO updateTopicDTO) {
-        TopicResponseDTO topicResponseDTO = topicCommandService.patchTopic(id, updateTopicDTO);
-        return ResponseEntity.ok(topicResponseDTO);
+    public ResponseEntity<TopicDetailDTO> patchTopic(@PathVariable Long id, @Valid @RequestBody UpdateTopicRequestDTO updateTopicRequestDTO) {
+        TopicDetailDTO topicDetailDTO = topicCommandService.patchTopic(id, updateTopicRequestDTO);
+        return ResponseEntity.ok(topicDetailDTO);
     }
 
     @DeleteMapping("/{id}")

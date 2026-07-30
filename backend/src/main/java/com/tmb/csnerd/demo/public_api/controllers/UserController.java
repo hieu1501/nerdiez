@@ -5,6 +5,7 @@ import com.tmb.csnerd.demo.domain.services.auth.UserPrincipalService;
 import com.tmb.csnerd.demo.dto.user.UserProfileResponseDTO;
 import com.tmb.csnerd.demo.exceptions.user.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -22,7 +23,9 @@ public class UserController {
     public ResponseEntity<UserProfileResponseDTO> getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
         UserPrincipal userPrincipal = userPrincipalService.getUserBySubject(jwt.getSubject())
                 .orElseThrow(() -> new UserNotFoundException(jwt.getSubject()));
-        UserProfileResponseDTO userProfileResponseDTO = new UserProfileResponseDTO(userPrincipal.getUsername(), userPrincipal.getUsername());
-        return ResponseEntity.ok(userProfileResponseDTO);
+        UserProfileResponseDTO body = new UserProfileResponseDTO(userPrincipal.getUsername(), userPrincipal.getUsername());
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(body);
     }
 }

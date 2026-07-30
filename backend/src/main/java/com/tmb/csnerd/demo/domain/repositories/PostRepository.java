@@ -28,7 +28,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         WHERE p.isActive = true
         ORDER BY p.createdAt DESC
     """)
-    List<Post> findMostRecentActivePost();
+    List<Post> findCreatedDescActivePosts();
 
     @Query("""
         SELECT p FROM Post p
@@ -37,7 +37,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         GROUP BY p.id
         ORDER BY SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END) DESC
 """)
-    List<Post> findMostUpvotedActivePost();
+    List<Post> findUpvotesDescActivePosts();
 
     @Query("""
         SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
@@ -62,6 +62,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         AND p.isActive = true
     """)
     Optional<Post> findActivePostByPostId(@Param("postId") Long postId);
+
+    @Query("""
+        SELECT p FROM Post p
+        WHERE p.id = :postId
+    """)
+    Optional<Post> findPostByPostId(@Param("postId") Long postId);
 
     @Query("""
         SELECT (p.id,

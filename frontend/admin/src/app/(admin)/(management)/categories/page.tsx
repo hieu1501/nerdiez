@@ -3,6 +3,8 @@
 import { useState, FormEvent, useEffect } from "react";
 import { categoriesService, Category } from "@/services/categories";
 import { ApiError } from "@/services/api";
+import { useToast } from "@/components/ui/toast/useToast";
+import ToastContainer from "@/components/ui/toast/Toast";
 import PageHeader from "@/components/management/PageHeader";
 import { Modal } from "@/components/ui/modal";
 import Label from "@/components/form/Label";
@@ -21,7 +23,7 @@ import Pagination from "@/components/tables/Pagination";
 export default function CategoriesPage() {
   const [items, setItems] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [page, setPage] = useState(1);
@@ -30,15 +32,11 @@ export default function CategoriesPage() {
   const fetch = async () => {
     try {
       setLoading(true);
-      setError("");
       const data = await categoriesService.getAll();
       setItems(data);
     } catch (e) {
-      if (e instanceof ApiError) {
-        setError(`Failed to load categories: ${e.message}`);
-      } else {
-        setError("Cannot connect to server. Please ensure the API is running.");
-      }
+      const msg = e instanceof ApiError ? e.message : "Cannot connect to server. Please ensure the API is running.";
+      toast.error(`Failed to load categories: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -62,7 +60,7 @@ export default function CategoriesPage() {
       setModalOpen(false);
       setEditing(null);
     } catch {
-      alert("Failed to save category.");
+      toast.error("Failed to save category.");
     }
   };
 
@@ -72,7 +70,7 @@ export default function CategoriesPage() {
       await categoriesService.delete(categoryId);
       await fetch();
     } catch {
-      alert("Failed to delete category.");
+      toast.error("Failed to delete category.");
     }
   };
   const closeModal = () => { setModalOpen(false); setEditing(null); };
@@ -82,14 +80,11 @@ export default function CategoriesPage() {
 
   return (
     <div>
+      <ToastContainer toasts={toast.toasts} onRemove={toast.remove} />
       <PageHeader title="Categories" onAdd={() => { setEditing(null); setModalOpen(true); }} addLabel="Add Category" />
       <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">Loading...</div>
-        ) : error ? (
-          <div className="p-6">
-            <div className="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-400">{error}</div>
-          </div>
         ) : items.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">No categories found.</div>
         ) : (

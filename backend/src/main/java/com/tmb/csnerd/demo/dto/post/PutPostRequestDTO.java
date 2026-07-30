@@ -5,11 +5,12 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.Set;
 
-public record UpdatePostDTO(
-    String title,
-    String content,
+public record PutPostRequestDTO(
+    @NotBlank String title,
+    @NotBlank String content,
     String featuredImage,
     String description,
-    Long categoryId,
-    Set<Long> topicIds
+    @NotNull Long categoryId,
+    Set<Long> topicIds,
+    Boolean isActive
 ) {}

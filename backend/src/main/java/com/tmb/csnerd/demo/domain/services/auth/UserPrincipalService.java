@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -51,5 +52,10 @@ public class UserPrincipalService implements UserDetailsService {
         Set<PostsVote> votes = Set.of();
         user.setVotes(votes);
         return new UserPrincipal(userRepository.save(user));
+    }
+
+    public UserPrincipal convertJwtToUserPrincipal(Jwt jwt) {
+        String subject = jwt.getSubject();
+        return getUserBySubject(subject).orElse(null);
     }
 }

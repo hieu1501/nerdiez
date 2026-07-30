@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -8,6 +8,11 @@ import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import Heading from "@tiptap/extension-heading";
+import { Node, mergeAttributes } from "@tiptap/core";
+import { uploadFile } from "@/services/upload";
+import { compressImage } from "@/lib/compress";
+import type { EditorView } from "@tiptap/pm/view";
+import type { Editor } from "@tiptap/react";
 
 const slugify = (text: string) =>
   text
@@ -18,11 +23,10 @@ const slugify = (text: string) =>
 let headingCounter = 0;
 
 const HeadingWithId = Heading.extend({
-  renderHTML({ node }) {
-    const level = node.attrs.level;
+  renderHTML({ node, HTMLAttributes }) {
     const text = node.textContent;
     const id = node.attrs.id || `${slugify(text) || "section"}-${headingCounter++}`;
-    return [`h${level}`, { id }, 0];
+    return [`h${node.attrs.level}`, mergeAttributes(HTMLAttributes, { id }), 0];
   },
 });
 
@@ -37,6 +41,55 @@ export default function RichTextEditor({
   onChange,
   placeholder,
 }: RichTextEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<Editor | null>(null);
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    try {
+      const compressed = await compressImage(file);
+      const url = await uploadFile(compressed);
+      if (url) {
+        const caption = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " ");
+        editorRef.current?.chain().focus().insertContent(`[${caption}](${url})`).run();
+      }
+    } catch {
+      // upload failed — silently ignore; user can retry
+    }
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageUpload(file);
+    e.target.value = "";
+  }, [handleImageUpload]);
+
+  const handlePaste = useCallback((_view: EditorView, event: ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    if (!items) return false;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        event.preventDefault();
+        const file = item.getAsFile();
+        if (file) handleImageUpload(file);
+        return true;
+      }
+    }
+    return false;
+  }, [handleImageUpload]);
+
+  const handleDrop = useCallback((_view: EditorView, event: DragEvent) => {
+    const files = event.dataTransfer?.files;
+    if (!files) return false;
+    for (const file of files) {
+      if (file.type.startsWith("image/")) {
+        event.preventDefault();
+        handleImageUpload(file);
+        return true;
+      }
+    }
+    return false;
+  }, [handleImageUpload]);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -45,7 +98,7 @@ export default function RichTextEditor({
       HeadingWithId,
       Underline,
       Link.configure({ openOnClick: false }),
-      Image.configure({ allowBase64: true }),
+      Image.configure({ allowBase64: false }),
       Placeholder.configure({
         placeholder: placeholder || "Start writing your article...",
       }),
@@ -56,12 +109,16 @@ export default function RichTextEditor({
       onChange(ed.getHTML());
     },
     editorProps: {
+      handlePaste,
+      handleDrop,
       attributes: {
         class:
           "prose prose-sm max-w-none focus:outline-none px-4 py-3 dark:prose-invert",
       },
     },
   });
+
+  editorRef.current = editor;
 
   const addLink = useCallback(() => {
     if (!editor) return;
@@ -72,12 +129,8 @@ export default function RichTextEditor({
   }, [editor]);
 
   const addImage = useCallback(() => {
-    if (!editor) return;
-    const url = window.prompt("Enter image URL:");
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
-    }
-  }, [editor]);
+    fileInputRef.current?.click();
+  }, []);
 
   if (!editor) return null;
 
@@ -108,6 +161,13 @@ export default function RichTextEditor({
 
   return (
     <div className="border border-gray-300 dark:border-gray-600 rounded-lg flex flex-col" style={{ height: "65vh" }}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
       <div className="flex flex-wrap gap-0.5 px-2 py-2 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
         <ToolBtn
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}

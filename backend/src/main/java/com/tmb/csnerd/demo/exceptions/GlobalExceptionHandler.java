@@ -1,6 +1,8 @@
 package com.tmb.csnerd.demo.exceptions;
 
 import com.tmb.csnerd.demo.exceptions.auth.InvalidTokenException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -8,10 +10,12 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
@@ -59,8 +63,14 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid Token");
     }
 
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<ErrorResponse> handleIOException(IOException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
+        logger.error(ex.getMessage(), ex);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
     }
 

@@ -12,6 +12,6 @@ export const categoriesService = {
   create: (data: { name: string; description?: string }) =>
     api.post<Category>("/categories", data, true),
   update: (categoryId: number, data: { name?: string; description?: string }) =>
-    api.patch<Category>(`/categories/${categoryId}`, data, true),
+    api.put<Category>(`/categories/${categoryId}`, data, true),
   delete: (categoryId: number) => api.delete<void>(`/categories/${categoryId}`, true),
 };

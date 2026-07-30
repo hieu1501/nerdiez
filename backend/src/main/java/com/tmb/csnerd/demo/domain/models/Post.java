@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
@@ -55,7 +56,7 @@ public class Post {
         joinColumns = @JoinColumn(name = "post_id"),
         inverseJoinColumns = @JoinColumn(name = "topic_id")
     )
-    private List<Topic> topics;
+    private Set<Topic> topics;
 
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "post")
     private PostMetadata postMetadata;
@@ -64,13 +65,21 @@ public class Post {
     private Boolean isActive;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostsVote> votes;
+    private Set<PostsVote> votes;
 
     public Set<Long> getTopicIds() {
-        Set<Long> topicIds = new HashSet<>(Set.of());
-        for (Topic topic : topics) {
-            topicIds.add(topic.getId());
-        }
-        return topicIds;
+        if (topics == null) return Set.of();
+        return topics.stream().map(Topic::getId).collect(Collectors.toSet());
+    }
+
+    public void addTopic(Topic topic) {
+        if (topics == null) topics = new HashSet<>();
+        topics.add(topic);
+        topic.addPost(this);
+    }
+
+    public void removeTopic(Topic topic) {
+        if (topics !=  null) topics.remove(topic);
+        topic.removePost(this);
     }
 }
