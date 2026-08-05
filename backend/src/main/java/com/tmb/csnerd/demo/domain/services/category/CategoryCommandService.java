@@ -28,7 +28,7 @@ public class CategoryCommandService {
         category.setName(request.name());
         category.setSlugName(SlugifyUtils.slugify(request.name()));
         category.setDescription(request.description());
-        return convertToCategoryDTO(categoryRepository.save(category));
+        return CategoryDetailDTO.from(categoryRepository.save(category));
     }
 
     @CacheEvict(value = "categories", allEntries = true)
@@ -37,7 +37,7 @@ public class CategoryCommandService {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new CategoryNotFoundException(categoryId));
         modifyCategoryIfChanged(category, request.name(), request.description());
-        return convertToCategoryDTO(categoryRepository.save(category));
+        return CategoryDetailDTO.from(categoryRepository.save(category));
     }
 
     @CacheEvict(value = "categories", allEntries = true)
@@ -49,7 +49,7 @@ public class CategoryCommandService {
             category = new Category();
         }
         modifyCategoryIfChanged(category, request.name(), request.description());
-        return convertToCategoryDTO(categoryRepository.save(category));
+        return CategoryDetailDTO.from(categoryRepository.save(category));
     }
 
     @CacheEvict(value = "categories", allEntries = true)
@@ -76,9 +76,5 @@ public class CategoryCommandService {
                 category.setDescription(newDescription);
             }
         }
-    }
-
-    private CategoryDetailDTO convertToCategoryDTO(Category category) {
-        return new CategoryDetailDTO(category.getId(), category.getName(), category.getSlugName(), category.getDescription());
     }
 }

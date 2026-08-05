@@ -305,69 +305,113 @@
   }
 }
 
-/* TipTap editor heading styles */
-.ProseMirror {
-  font-size: 1.125rem;
-  line-height: 1.8;
-  text-align: justify;
+/* ── MDEditor overrides ────────────────────── */
+
+.w-md-editor {
+  --md-editor-background-color: transparent;
+  --md-editor-box-shadow-color: var(--color-gray-300);
 }
-.ProseMirror h1 {
-  font-size: 2em;
-  font-weight: 700;
-  line-height: 1.2;
-  margin: 0.67em 0;
-  color: inherit;
+.dark .w-md-editor {
+  --md-editor-box-shadow-color: var(--color-gray-700);
 }
 
-.ProseMirror h2 {
-  font-size: 1.5em;
-  font-weight: 600;
-  line-height: 1.3;
-  margin: 0.75em 0;
-  color: inherit;
+.w-md-editor-toolbar {
+  background-color: var(--color-gray-50) !important;
+  border-bottom: 1px solid var(--color-gray-200) !important;
+  padding: 4px 8px !important;
+  gap: 1px !important;
+  flex-wrap: wrap;
+}
+.dark .w-md-editor-toolbar {
+  background-color: var(--color-gray-800) !important;
+  border-bottom-color: var(--color-gray-700) !important;
 }
 
-.ProseMirror h3 {
-  font-size: 1.25em;
-  font-weight: 600;
-  line-height: 1.4;
-  margin: 0.83em 0;
-  color: inherit;
+.w-md-editor-toolbar li {
+  display: inline-flex !important;
+  align-items: center !important;
 }
 
-/* Content image sizing - maintain aspect ratio */
-.ProseMirror img {
-  max-width: 100%;
-  height: auto !important;
-  display: block;
-  margin: 1em auto;
+.w-md-editor-toolbar li > button {
+  height: 30px !important;
+  width: 30px !important;
+  padding: 6px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  color: var(--color-gray-500) !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.dark .w-md-editor-toolbar li > button {
+  color: var(--color-gray-400) !important;
+}
+
+.w-md-editor-toolbar li > button:hover,
+.w-md-editor-toolbar li > button:focus-visible {
+  background-color: var(--color-gray-200) !important;
+  color: var(--color-gray-800) !important;
+}
+.dark .w-md-editor-toolbar li > button:hover,
+.dark .w-md-editor-toolbar li > button:focus-visible {
+  background-color: var(--color-gray-700) !important;
+  color: var(--color-gray-100) !important;
+}
+
+.w-md-editor-toolbar li > button:active {
+  background-color: var(--color-gray-300) !important;
+  transform: scale(0.95);
+}
+.dark .w-md-editor-toolbar li > button:active {
+  background-color: var(--color-gray-600) !important;
+}
+
+.w-md-editor-toolbar li.active > button {
+  color: var(--color-brand-500) !important;
+  background-color: var(--color-brand-50) !important;
+}
+.dark .w-md-editor-toolbar li.active > button {
+  color: var(--color-brand-400) !important;
+  background-color: color-mix(in srgb, var(--color-brand-500) 12%, transparent) !important;
+}
+
+.w-md-editor-toolbar-divider {
+  height: 20px !important;
+  width: 1px !important;
+  margin: 0 4px !important;
+  background-color: var(--color-gray-300) !important;
+  flex-shrink: 0;
+}
+.dark .w-md-editor-toolbar-divider {
+  background-color: var(--color-gray-600) !important;
+}
+
+/* Heading buttons: wider for text labels */
+.w-md-editor-toolbar li > button[title^="Heading "] {
+  width: auto !important;
+  padding: 6px 8px !important;
+}
+
+/* ── Editor preview: smaller font & constrained images ── */
+
+.wmde-markdown,
+.w-md-editor-preview .wmde-markdown,
+.w-md-editor-show-live .wmde-markdown {
+  font-size: 0.9375rem !important;
+}
+.wmde-markdown img {
+  max-height: 24rem !important;
+  width: auto !important;
+  object-fit: contain !important;
   border-radius: 0.5rem;
+  display: inline-block;
+  margin: 0.5em 0;
 }
 
-/* Editor: figure with caption */
-.ProseMirror figure.image-figure {
-  margin: 1.5em 0;
-  text-align: center;
-}
-.ProseMirror figure.image-figure img {
-  border-radius: 0.5rem;
-}
-.ProseMirror figure.image-figure figcaption {
-  margin-top: 0.4em;
-  font-size: 0.875em;
-  color: #6b7280;
-  text-align: center;
-}
 
-.prose img {
-  max-width: 100%;
-  height: auto !important;
-  display: block;
-  margin: 1.5em auto;
-  border-radius: 0.5rem;
-}
+/* ── View page: Markdown prose styles ───────── */
 
-/* View page: heading styles (no @tailwindcss/typography installed) */
 .prose {
   text-align: justify;
 }
@@ -375,77 +419,160 @@
   font-weight: 600 !important;
   color: inherit !important;
 }
-.prose h1 {
-  font-size: 2em !important;
-  font-weight: 700 !important;
-  line-height: 1.2 !important;
-  margin: 0.67em 0 !important;
-}
-.prose h2 {
-  font-size: 1.5em !important;
-  font-weight: 600 !important;
-  line-height: 1.3 !important;
-  margin: 0.75em 0 !important;
-}
-.prose h3 {
-  font-size: 1.25em !important;
-  font-weight: 600 !important;
-  line-height: 1.4 !important;
-  margin: 0.83em 0 !important;
-}
-.prose p {
-  margin: 1em 0;
-  line-height: 1.75;
-}
-.prose a {
-  color: #2563eb;
-  text-decoration: underline;
-}
-.prose blockquote {
-  border-left: 4px solid #d1d5db;
-  padding-left: 1em;
-  margin: 1em 0;
-  color: #6b7280;
-}
-.prose ul, .prose ol {
-  padding-left: 1.5em;
-  margin: 1em 0;
-}
-.prose li {
-  margin: 0.25em 0;
-}
-.prose strong {
-  font-weight: 600;
-}
+.prose h1 { font-size: 2em !important; font-weight: 700 !important; line-height: 1.2 !important; margin: 0.67em 0 !important; }
+.prose h2 { font-size: 1.5em !important; line-height: 1.3 !important; margin: 0.75em 0 !important; }
+.prose h3 { font-size: 1.25em !important; line-height: 1.4 !important; margin: 0.83em 0 !important; }
+.prose p { margin: 1em 0; line-height: 1.75; }
+.prose a { color: #2563eb; text-decoration: underline; }
+.prose blockquote { border-left: 4px solid #d1d5db; padding-left: 1em; margin: 1em 0; color: #6b7280; }
+.prose ul, .prose ol { padding-left: 1.5em; margin: 1em 0; }
+.prose li { margin: 0.25em 0; }
+.prose strong { font-weight: 600; }
+.prose img { max-width: 100%; height: auto !important; display: block; margin: 1.5em auto; border-radius: 0.5rem; }
 
-/* View page: figure with caption */
-.prose figure.image-figure {
-  margin: 1.5em 0;
-  text-align: center;
-}
-.prose figure.image-figure img {
+.dark .prose { color: #e5e7eb; }
+.dark .prose a { color: #60a5fa; }
+.dark .prose blockquote { border-left-color: #4b5563; color: #9ca3af; }
+
+/* Code blocks & inline code in view page */
+.prose pre {
+  background-color: #f3f4f6 !important;
+  border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
-}
-.prose figure.image-figure figcaption {
-  margin-top: 0.4em;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
   font-size: 0.875em;
-  color: #6b7280;
-  text-align: center;
+  line-height: 1.6;
 }
-
-/* Dark mode overrides */
-.dark .prose {
+.dark .prose pre {
+  background-color: #1f2937 !important;
+  border-color: #374151;
   color: #e5e7eb;
 }
-.dark .prose a {
-  color: #60a5fa;
+
+.prose code {
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+  padding: 0.15em 0.35em;
+  font-size: 0.875em;
+  font-weight: 500;
+  color: #1f2937;
 }
-.dark .prose blockquote {
-  border-left-color: #4b5563;
-  color: #9ca3af;
+.dark .prose code {
+  background-color: #374151;
+  color: #e5e7eb;
 }
-.dark .prose figure.image-figure figcaption {
-  color: #9ca3af;
+
+.prose pre code {
+  background: none !important;
+  padding: 0;
+  font-weight: 400;
+  color: inherit;
+}
+
+/* ── Syntax highlighting (Prism) ──────────── */
+
+.prose .token.comment,
+.prose .token.prolog,
+.prose .token.doctype,
+.prose .token.cdata {
+  color: #e11d48 !important;
+  font-style: italic !important;
+}
+.dark .prose .token.comment,
+.dark .prose .token.prolog,
+.dark .prose .token.doctype,
+.dark .prose .token.cdata {
+  color: #fb7185 !important;
+}
+
+.prose .token.punctuation {
+  color: #6b7280 !important;
+}
+.dark .prose .token.punctuation {
+  color: #9ca3af !important;
+}
+
+.prose .token.property,
+.prose .token.tag,
+.prose .token.boolean,
+.prose .token.number,
+.prose .token.constant,
+.prose .token.symbol,
+.prose .token.deleted {
+  color: #9333ea !important;
+}
+.dark .prose .token.property,
+.dark .prose .token.tag,
+.dark .prose .token.boolean,
+.dark .prose .token.number,
+.dark .prose .token.constant,
+.dark .prose .token.symbol,
+.dark .prose .token.deleted {
+  color: #c084fc !important;
+}
+
+.prose .token.selector,
+.prose .token.attr-name,
+.prose .token.string,
+.prose .token.char,
+.prose .token.builtin,
+.prose .token.inserted {
+  color: #059669 !important;
+}
+.dark .prose .token.selector,
+.dark .prose .token.attr-name,
+.dark .prose .token.string,
+.dark .prose .token.char,
+.dark .prose .token.builtin,
+.dark .prose .token.inserted {
+  color: #34d399 !important;
+}
+
+.prose .token.operator,
+.prose .token.entity,
+.prose .token.url,
+.prose .language-css .token.string,
+.prose .style .token.string {
+  color: #d97706 !important;
+}
+.dark .prose .token.operator,
+.dark .prose .token.entity,
+.dark .prose .token.url,
+.dark .prose .language-css .token.string,
+.dark .prose .style .token.string {
+  color: #fbbf24 !important;
+}
+
+.prose .token.atrule,
+.prose .token.attr-value,
+.prose .token.keyword {
+  color: #2563eb !important;
+}
+.dark .prose .token.atrule,
+.dark .prose .token.attr-value,
+.dark .prose .token.keyword {
+  color: #60a5fa !important;
+}
+
+.prose .token.function,
+.prose .token.class-name {
+  color: #7c3aed !important;
+}
+.dark .prose .token.function,
+.dark .prose .token.class-name {
+  color: #a78bfa !important;
+}
+
+.prose .token.regex,
+.prose .token.important,
+.prose .token.variable {
+  color: #dc2626 !important;
+}
+.dark .prose .token.regex,
+.dark .prose .token.important,
+.dark .prose .token.variable {
+  color: #f87171 !important;
 }
 
 /* third-party libraries CSS */

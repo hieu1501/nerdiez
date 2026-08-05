@@ -4,10 +4,15 @@ import com.tmb.csnerd.demo.domain.security.UserPrincipal;
 import com.tmb.csnerd.demo.domain.services.auth.UserPrincipalService;
 import com.tmb.csnerd.demo.domain.services.post.PostCommandService;
 import com.tmb.csnerd.demo.domain.services.post.PostQueryService;
+import com.tmb.csnerd.demo.dto.common.PageResponse;
 import com.tmb.csnerd.demo.dto.post.*;
 import com.tmb.csnerd.demo.public_api.controllers.CacheableController;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +20,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.servlet.mvc.AbstractController;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,16 +37,17 @@ public class AdminPostController implements CacheableController {
         path = "/all",
         produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE }
     )
-    public ResponseEntity<List<AdminPostBriefDTO>> getAllAdminPostItems(){
-        List<AdminPostBriefDTO> body = postQueryService.getAllPostsForAdmin();
+    public ResponseEntity<PageResponse<AdminPostBriefDTO>> getAllAdminPostItems(@PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<AdminPostBriefDTO> allPostsPage = postQueryService.getAllPostsPage(pageable);
         StringBuilder stringBuilder = new StringBuilder();
-        for ( AdminPostBriefDTO dto : body ){
-            stringBuilder.append(dto.id().toString()).append(";").append(dto.updatedAt().toString())    ;
+        for (AdminPostBriefDTO post : allPostsPage){
+            stringBuilder.append(post.id().toString()).append(";").append(post.updatedAt().toString());
         }
         String identifier = stringBuilder.toString();
         if (identifier.isEmpty()) {
             identifier = "empty"; // Hardcode etag for empty resource
         }
+        PageResponse<AdminPostBriefDTO> body = PageResponse.from(allPostsPage);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noCache())
                 .eTag(buildETag(identifier))

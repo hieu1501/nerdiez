@@ -66,7 +66,6 @@ CREATE TABLE `nerdy`.`posts_topics` (
 CREATE TABLE `nerdy`.`images` (
   `path` varchar(45) PRIMARY KEY NOT NULL,
   `post_id` bigint,
-  `description` varchar(255) NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

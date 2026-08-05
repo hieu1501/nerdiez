@@ -35,7 +35,7 @@ public class TopicCommandService {
         topic.setSlugName(SlugifyUtils.slugify(request.name()));
         topic.setDescription(request.description());
         topic.setCategory(category);
-        return convertToTopicResponseDTO(topicRepository.save(topic));
+        return TopicDetailDTO.from(topicRepository.save(topic));
     }
 
     @CacheEvict(value = "topics", allEntries = true)
@@ -44,7 +44,7 @@ public class TopicCommandService {
         Topic topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new TopicNotFoundException(topicId));
         modifyTopicIfChanged(topic, request.name(), request.description(), request.categoryId());
-        return convertToTopicResponseDTO(topicRepository.save(topic));
+        return TopicDetailDTO.from(topicRepository.save(topic));
     }
 
     @CacheEvict(value = "topics", allEntries = true)
@@ -56,7 +56,7 @@ public class TopicCommandService {
             topic = new Topic();
         }
         modifyTopicIfChanged(topic, request.name(), request.description(), request.categoryId());
-        return convertToTopicResponseDTO(topicRepository.save(topic));
+        return TopicDetailDTO.from(topicRepository.save(topic));
     }
 
     @CacheEvict(value = "topics", allEntries = true)
@@ -86,10 +86,5 @@ public class TopicCommandService {
             Category category = categoryQueryService.getCategoryById(newCategoryId);
             topic.setCategory(category);
         }
-    }
-
-    TopicDetailDTO convertToTopicResponseDTO(Topic topic) {
-        CategoryRefDTO categoryRef = new CategoryRefDTO(topic.getCategory().getId(), topic.getCategory().getName());
-        return new TopicDetailDTO(topic.getId(), topic.getName(), topic.getSlugName(), topic.getDescription(), categoryRef);
     }
 }

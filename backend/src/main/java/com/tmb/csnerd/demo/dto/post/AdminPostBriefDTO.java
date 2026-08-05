@@ -1,19 +1,32 @@
 package com.tmb.csnerd.demo.dto.post;
 
-import com.tmb.csnerd.demo.dto.category.CategoryRefDTO;
-import com.tmb.csnerd.demo.dto.topic.TopicRefDTO;
-
+import com.tmb.csnerd.demo.domain.models.Post;
 import java.time.Instant;
-import java.util.Set;
 
 public record AdminPostBriefDTO(
     Long id,
     String title,
     String authorUsername,
-    CategoryRefDTO category,
+    Long categoryId,
+    String categoryName,
     Instant createdAt,
     Instant updatedAt,
-    Integer upvoteCount,
-    Integer downvoteCount,
+    Long upvoteCount,
+    Long downvoteCount,
     Boolean isActive
-) {}
+) {
+    public static AdminPostBriefDTO from(Post post) {
+        return new AdminPostBriefDTO(
+            post.getId(),
+            post.getTitle(),
+            post.getAuthor().getUsername(),
+            post.getCategory().getId(),
+            post.getCategory().getName(),
+            post.getCreatedAt(),
+            post.getUpdatedAt(),
+            post.getVoteCount().getFirst(),
+            post.getVoteCount().getSecond(),
+            post.getIsActive()
+        );
+    }
+}

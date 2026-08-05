@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.data.util.Pair;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -81,5 +82,19 @@ public class Post {
     public void removeTopic(Topic topic) {
         if (topics !=  null) topics.remove(topic);
         topic.removePost(this);
+    }
+
+    public Pair<Long, Long> getVoteCount() {
+        Long upvotes = 0L;
+        Long downvotes = 0L;
+        if (votes != null) {
+            for (PostsVote vote : votes) {
+                if (vote.getIsActive() && vote.getVote() != 0) {
+                    if (vote.getVote() == 1) upvotes++;
+                    if (vote.getVote() == -1) downvotes++;
+                }
+            }
+        }
+        return Pair.of(upvotes, downvotes);
     }
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { articlesService, Article } from "@/services/articles";
+import { articlesService, ArticlePage } from "@/services/articles";
 import { ApiError } from "@/services/api";
 import { useToast } from "@/components/ui/toast/useToast";
 import ToastContainer from "@/components/ui/toast/Toast";
@@ -16,95 +16,105 @@ import {
 } from "@/components/ui/table";
 import Badge from "@/components/ui/badge/Badge";
 import Pagination from "@/components/tables/Pagination";
+import { ArrowDownIcon, ArrowUpIcon, SortIcon } from "@/icons";
 
-type SortKey = "title" | "authorUsername" | "category" | "updatedAt" | "isActive" | "upvoteCount" | "downvoteCount";
+type SortField = "title" | "createdAt" | "updatedAt";
 type SortDir = "asc" | "desc";
+
+const PAGE_SIZE = 10;
+
+type SortableHeaderProps = {
+  label: string;
+  field: SortField;
+  activeField: SortField;
+  direction: SortDir;
+  onSort: (field: SortField) => void;
+};
+
+const SortableHeader: React.FC<SortableHeaderProps> = ({
+  label,
+  field,
+  activeField,
+  direction,
+  onSort,
+}) => {
+  const active = activeField === field;
+  return (
+    <TableCell
+      isHeader
+      aria-sort={active ? (direction === "asc" ? "ascending" : "descending") : "none"}
+      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer select-none group hover:text-gray-700 dark:hover:text-gray-300"
+      onClick={() => onSort(field)}
+    >
+      <span className="flex items-center gap-1.5" title={`Sort by ${label}`}>
+        {label}
+        {active ? (
+          direction === "asc" ? (
+            <ArrowUpIcon className="size-3 text-brand-500" />
+          ) : (
+            <ArrowDownIcon className="size-3 text-brand-500" />
+          )
+        ) : (
+          <SortIcon className="size-3 opacity-40" />
+        )}
+      </span>
+    </TableCell>
+  );
+};
 
 export default function ArticlesPage() {
   const router = useRouter();
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [page, setPage] = useState(0);
+  const [sortField, setSortField] = useState<SortField>("updatedAt");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [data, setData] = useState<ArticlePage | null>(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
-  const [page, setPage] = useState(1);
-  const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const pageSize = 5;
 
-  const fetchArticles = async () => {
-    try {
-      setLoading(true);
-      const articlesData = await articlesService.getAll();
-      setArticles(articlesData);
-    } catch (e) {
-      const msg = e instanceof ApiError ? e.message : "Cannot connect to server. Please ensure the API is running.";
-      toast.error(`Failed to load articles: ${msg}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchArticles = useCallback(() => {
+    return articlesService
+      .getAll({
+        page,
+        size: PAGE_SIZE,
+        sort: `${sortField},${sortDir}`,
+      })
+      .then((result) => {
+        setData(result);
+      })
+      .catch((e) => {
+        const msg = e instanceof ApiError ? e.message : "Cannot connect to server. Please ensure the API is running.";
+        toast.error(`Failed to load articles: ${msg}`);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [page, sortField, sortDir, toast]);
 
   useEffect(() => {
     fetchArticles();
-  }, []);
+  }, [fetchArticles]);
 
   const handleDelete = async (id: number) => {
     try {
       await articlesService.delete(id);
-      setArticles((prev) => prev.filter((a) => a.id !== id));
+      if (data && data.items.length === 1 && page > 0) {
+        setPage((p) => p - 1);
+      } else {
+        await fetchArticles();
+      }
     } catch {
       toast.error("Failed to delete article. Check server connection.");
     }
   };
 
-  const handleSort = (key: SortKey) => {
-    setPage(1);
-    if (sortKey === key) {
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
-      setSortKey(key);
+      setSortField(field);
       setSortDir("asc");
     }
-  };
-
-  const getSortValue = (article: Article, key: SortKey): string | number => {
-    switch (key) {
-      case "title": return article.title.toLowerCase();
-      case "authorUsername": return article.authorUsername?.toLowerCase() ?? "";
-      case "category": return article.category?.name?.toLowerCase() ?? "";
-      case "updatedAt": return article.updatedAt ?? "";
-      case "isActive": return article.isActive ? 1 : 0;
-      case "upvoteCount": return article.upvoteCount ?? 0;
-      case "downvoteCount": return article.downvoteCount ?? 0;
-    }
-  };
-
-  const sorted = useMemo(() => {
-    const copy = [...articles];
-    copy.sort((a, b) => {
-      const av = getSortValue(a, sortKey);
-      const bv = getSortValue(b, sortKey);
-      if (av < bv) return sortDir === "asc" ? -1 : 1;
-      if (av > bv) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    return copy;
-  }, [articles, sortKey, sortDir]);
-
-  const totalPages = Math.ceil(sorted.length / pageSize);
-  const paged = sorted.slice((page - 1) * pageSize, page * pageSize);
-
-  const SortHeader = ({ label, col }: { label: string; col: SortKey }) => {
-    const active = sortKey === col;
-    const arrow = active ? (sortDir === "asc" ? " \u25B2" : " \u25BC") : "";
-    return (
-      <TableCell
-        isHeader
-        className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-300"
-        onClick={() => handleSort(col)}
-      >
-        {label}{arrow}
-      </TableCell>
-    );
+    setPage(0);
   };
 
   return (
@@ -118,38 +128,40 @@ export default function ArticlesPage() {
       <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">Loading...</div>
-        ) : articles.length === 0 ? (
+        ) : !data || data.items.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">No articles found.</div>
         ) : (
           <>
             <Table>
               <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                 <TableRow>
-                  <SortHeader label="Title" col="title" />
-                  <SortHeader label="Author" col="authorUsername" />
-                  <SortHeader label="Category" col="category" />
-                  <SortHeader label="Upvotes" col="upvoteCount" />
-                  <SortHeader label="Downvotes" col="downvoteCount" />
-                  <SortHeader label="Last Modified" col="updatedAt" />
-                  <SortHeader label="Status" col="isActive" />
+                  <SortableHeader label="Title" field="title" activeField={sortField} direction={sortDir} onSort={handleSort} />
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Author</TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Category</TableCell>
+                  <SortableHeader label="Created" field="createdAt" activeField={sortField} direction={sortDir} onSort={handleSort} />
+                  <SortableHeader label="Last Modified" field="updatedAt" activeField={sortField} direction={sortDir} onSort={handleSort} />
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Upvotes</TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Downvotes</TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Status</TableCell>
                   <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-end text-theme-xs dark:text-gray-400">Actions</TableCell>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {paged.map((article) => (
+                {data.items.map((article) => (
                   <TableRow key={article.id}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">{article.title}</span>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.authorUsername}</TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.category ? article.category.name : "—"}</TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.createdAt ? new Date(article.createdAt).toLocaleDateString() : "—"}</TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.updatedAt ? new Date(article.updatedAt).toLocaleDateString() : "—"}</TableCell>
                     <TableCell className="px-4 py-3 text-start text-theme-sm">
                       <span className="text-green-600 dark:text-green-400 font-medium">{article.upvoteCount ?? 0}</span>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-start text-theme-sm">
                       <span className="text-red-500 dark:text-red-400 font-medium">{article.downvoteCount ?? 0}</span>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.updatedAt ? new Date(article.updatedAt).toLocaleDateString() : "—"}</TableCell>
                     <TableCell className="px-4 py-3 text-start">
                       <Badge size="sm" color={article.isActive ? "success" : "warning"}>{article.isActive ? "Published" : "Inactive"}</Badge>
                     </TableCell>
@@ -179,11 +191,23 @@ export default function ArticlesPage() {
                 ))}
               </TableBody>
             </Table>
-            {totalPages > 1 && (
-              <div className="flex justify-end px-5 py-4">
-                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Showing {data.offset + 1}–{data.offset + data.items.length} of {data.totalItems} articles · {data.size} per page
+              </span>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Page {page + 1} of {data.totalPages}
+                </span>
+                {data.totalPages > 1 && (
+                  <Pagination
+                    currentPage={page + 1}
+                    totalPages={data.totalPages}
+                    onPageChange={(p) => setPage(p - 1)}
+                  />
+                )}
               </div>
-            )}
+            </div>
           </>
         )}
       </div>

@@ -12,20 +12,48 @@ interface TableOfContentsProps {
   content: string;
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function isHtml(str: string): boolean {
+  return /^\s*<[a-z][^>]*>/i.test(str);
+}
+
 export default function TableOfContents({ content }: TableOfContentsProps) {
   const headings = useMemo(() => {
     const items: TocItem[] = [];
-    const regex = /<h([1-3])(\s[^>]*)?>(.*?)<\/h[1-3]>/gi;
-    let match: RegExpExecArray | null;
+    const counts = new Map<string, number>();
 
-    while ((match = regex.exec(content)) !== null) {
-      const level = parseInt(match[1]);
-      const attrs = match[2] || "";
-      const inner = match[3];
-      const text = inner.replace(/<[^>]*>/g, "");
-      const idMatch = attrs.match(/id=["']([^"']+)["']/);
-      const id = idMatch ? idMatch[1] : `h-${items.length}`;
-      items.push({ id, text, level });
+    if (isHtml(content)) {
+      const regex = /<h([1-3])(?:\s[^>]*)?>(.+?)<\/h\1>/gi;
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(content)) !== null) {
+        const level = parseInt(match[1]);
+        const text = match[2].replace(/<[^>]+>/g, "").trim();
+        let id = slugify(text);
+        const count = counts.get(id) ?? 0;
+        if (count > 0) id += `-${count}`;
+        counts.set(id, (counts.get(id) ?? 0) + 1);
+        items.push({ id, text, level });
+      }
+    } else {
+      const regex = /^(#{1,3})[ \t]+(.+)$/gm;
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(content)) !== null) {
+        const level = match[1].length;
+        const text = match[2].trim();
+        let id = slugify(text);
+        const count = counts.get(id) ?? 0;
+        if (count > 0) id += `-${count}`;
+        counts.set(id, (counts.get(id) ?? 0) + 1);
+        items.push({ id, text, level });
+      }
     }
 
     return items;

@@ -1,6 +1,9 @@
 package com.tmb.csnerd.demo.domain.repositories;
 
 import com.tmb.csnerd.demo.domain.models.Post;
+import com.tmb.csnerd.demo.dto.post.AdminPostBriefDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,14 +13,33 @@ import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("""
-        SELECT p FROM Post p
-        LEFT JOIN FETCH p.author a
-        LEFT JOIN FETCH p.category c
-        LEFT JOIN FETCH p.topics t
-        LEFT JOIN FETCH p.postMetadata pm
-        ORDER BY p.createdAt DESC
+        SELECT new com.tmb.csnerd.demo.dto.post.AdminPostBriefDTO(
+            p.id,
+            p.title,
+            a.username,
+            c.id,
+            c.name,
+            p.createdAt,
+            p.updatedAt,
+            COUNT(CASE WHEN v.isActive = true AND v.vote = 1 THEN v.id.userId ELSE NULL END),
+            COUNT(CASE WHEN v.isActive = true AND v.vote = -1 THEN v.id.userId ELSE NULL END),
+            p.isActive
+       )
+       FROM Post p
+       JOIN p.author a
+       JOIN p.category c
+       LEFT JOIN p.votes v
+       GROUP BY
+           p.id,
+           p.title,
+           a.username,
+           c.id,
+           c.name,
+           p.createdAt,
+           p.updatedAt,
+           p.isActive
     """)
-    List<Post> getAllArticlesForAdmin();
+    Page<AdminPostBriefDTO> getAllPostBriefPage(Pageable pageable);
 
     @Query("""
         SELECT p FROM Post p
@@ -28,7 +50,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         WHERE p.isActive = true
         ORDER BY p.createdAt DESC
     """)
-    List<Post> findCreatedDescActivePosts();
+    List<Post> getCreatedDescActivePosts();
 
     @Query("""
         SELECT p FROM Post p
@@ -37,7 +59,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         GROUP BY p.id
         ORDER BY SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END) DESC
 """)
-    List<Post> findUpvotesDescActivePosts();
+    List<Post> getUpvotesDescActivePosts();
 
     @Query("""
         SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
@@ -78,5 +100,5 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         WHERE p.id IN :postIds
         GROUP BY p.id
     """)
-    List<Object[]> findVoteCountsByPostIds(@Param("postIds") List<Long> postIds);
+    List<Object[]> getVoteCountsByPostIds(@Param("postIds") List<Long> postIds);
 }

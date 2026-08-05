@@ -14,6 +14,7 @@ import ToastContainer from "@/components/ui/toast/Toast";
 import { Modal } from "@/components/ui/modal";
 import RichTextEditor from "@/components/management/RichTextEditor";
 import TableOfContents from "@/components/management/TableOfContents";
+import Select from "@/components/form/Select";
 import MultiSelect from "@/components/form/MultiSelect";
 import Button from "@/components/ui/button/Button";
 
@@ -35,7 +36,6 @@ export default function EditArticlePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showCoverModal, setShowCoverModal] = useState(false);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState("");
-  const [coverDescription, setCoverDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const toast = useToast();
   const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; status: string }>({ show: false, status: "" });
@@ -67,7 +67,6 @@ export default function EditArticlePage() {
     if (!file) {
       setFeaturedImage(article?.featuredImage ?? "");
       setCoverPreviewUrl("");
-      setCoverDescription("");
       return;
     }
     setUploadingImage(true);
@@ -75,7 +74,6 @@ export default function EditArticlePage() {
       const compressed = await compressImage(file);
       const url = await uploadFile(compressed);
       setCoverPreviewUrl(url);
-      setCoverDescription("");
       setShowCoverModal(true);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Failed to upload cover image.");
@@ -91,7 +89,6 @@ export default function EditArticlePage() {
 
   const cancelCoverImage = () => {
     setCoverPreviewUrl("");
-    setCoverDescription("");
     setShowCoverModal(false);
   };
 
@@ -226,20 +223,16 @@ export default function EditArticlePage() {
           />
         </div>
         <div className="w-44">
-          <label htmlFor="category" className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-            Category
-          </label>
-          <select
-            id="category"
-            value={categoryId}
-            onChange={(e) => setCategoryId(Number(e.target.value))}
-            className="h-11 w-full appearance-none rounded-lg border border-gray-300 px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-          >
-            <option value={0}>Select category</option>
-            {categories.map((c) => (
-              <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
-            ))}
-          </select>
+          <Select
+            label="Category"
+            options={categories.map((c) => ({
+              value: String(c.categoryId),
+              label: c.name,
+            }))}
+            placeholder="Select category"
+            defaultValue={categoryId ? String(categoryId) : ""}
+            onChange={(value) => setCategoryId(Number(value))}
+          />
         </div>
         <div className="w-60">
           <MultiSelect
@@ -292,7 +285,7 @@ export default function EditArticlePage() {
           </label>
           <RichTextEditor content={content} onChange={setContent} />
         </div>
-        <aside className="hidden xl:block flex-1">
+        <aside className="hidden xl:block flex-1 min-w-0">
           <TableOfContents content={content} />
         </aside>
       </div>
@@ -318,16 +311,6 @@ export default function EditArticlePage() {
           <div className="aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 mb-4">
             <img src={coverPreviewUrl} alt="Cover preview" className="h-full w-full object-cover" />
           </div>
-          <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-            Description
-          </label>
-          <input
-            type="text"
-            value={coverDescription}
-            onChange={(e) => setCoverDescription(e.target.value)}
-            placeholder="Image description (alt text)"
-            className="block w-full h-11 px-4 text-sm border rounded-lg border-gray-300 bg-transparent text-gray-900 placeholder-gray-400 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:placeholder-white/30 dark:focus:border-brand-800 mb-4"
-          />
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={cancelCoverImage}>Cancel</Button>
             <Button variant="primary" onClick={confirmCoverImage}>Confirm</Button>

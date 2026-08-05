@@ -21,7 +21,7 @@ public class TopicQueryService {
     public List<TopicDetailDTO> getAllTopics() {
         return topicRepository.findAll()
                 .stream()
-                .map(t -> new TopicDetailDTO(t.getId(), t.getName(), t.getSlugName(), t.getDescription(), new CategoryRefDTO(t.getCategory().getId(), t.getCategory().getName())))
+                .map(TopicDetailDTO::from)
                 .collect(Collectors.toList());
     }
 

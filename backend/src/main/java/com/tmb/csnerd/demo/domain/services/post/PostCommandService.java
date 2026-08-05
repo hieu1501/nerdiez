@@ -6,25 +6,23 @@ import com.tmb.csnerd.demo.domain.services.image.ImageService;
 import com.tmb.csnerd.demo.domain.services.topic.TopicQueryService;
 import com.tmb.csnerd.demo.dto.post.*;
 import com.tmb.csnerd.demo.exceptions.UnauthorizedException;
-import com.tmb.csnerd.demo.exceptions.category.CategoryNotFoundException;
 import com.tmb.csnerd.demo.exceptions.post.PostNotFoundException;
-import com.tmb.csnerd.demo.domain.repositories.CategoryRepository;
 import com.tmb.csnerd.demo.domain.repositories.PostRepository;
-import com.tmb.csnerd.demo.domain.repositories.TopicRepository;
 import com.tmb.csnerd.demo.domain.security.UserPrincipal;
+import com.tmb.csnerd.demo.utils.MarkdownUtils;
 import com.tmb.csnerd.demo.utils.MediaUtils;
-import com.tmb.csnerd.demo.utils.SanitizerUtils;
 import com.tmb.csnerd.demo.utils.SlugifyUtils;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+import org.commonmark.node.AbstractVisitor;
+import org.commonmark.node.Image;
+import org.commonmark.node.Link;
+import org.commonmark.node.Node;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,24 +34,25 @@ public class PostCommandService extends PostBaseService {
     private final PostRepository postRepository;
     private final CategoryQueryService categoryQueryService;
     private final TopicQueryService topicQueryService;
-    private final SanitizerUtils sanitizerUtils;
     private final ImageService imageService;
 
     public PostCommandService(PostRepository postRepository,
                               CategoryQueryService categoryQueryService,
                               TopicQueryService topicQueryService,
-                              SanitizerUtils sanitizerUtils,
+                              MarkdownUtils markdownUtils,
                               ImageService imageService,
                               MediaUtils mediaUtils) {
-        super(mediaUtils);
+        super(mediaUtils, markdownUtils);
         this.postRepository = postRepository;
         this.categoryQueryService = categoryQueryService;
         this.topicQueryService = topicQueryService;
-        this.sanitizerUtils = sanitizerUtils;
         this.imageService = imageService;
     }
 
-    @CacheEvict(value = "post-admin", key = "'all'")
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "post-admin-list", allEntries = true),
+        @CacheEvict(cacheNames = "post-public-list", allEntries = true),
+    })
     @Transactional
     public AdminPostDetailDTO createPostForAdmin(CreatePostRequestDTO request, UserPrincipal author) {
         if (author == null) {
@@ -62,10 +61,10 @@ public class PostCommandService extends PostBaseService {
         Category category = categoryQueryService.getCategoryById(request.categoryId());
         // Sanitizing request
         List<String> imagePaths = new ArrayList<>();
-        String title = sanitizeStringContent(request.title());
-        String content = normalizeImageUrlsAndSanitizeHtmlContent(request.content(), imagePaths);
-        String description = sanitizeStringContent(request.description());
-        String featuredImage = sanitizerUtils.isAllowedMediaUrl(request.featuredImage()) ? request.featuredImage() : null;
+        String title = request.title();
+        String content = normalizeMarkdownAndExtractImageUrls(request.content(), imagePaths);
+        String description = request.description();
+        String featuredImage = mediaUtils.isAllowedMediaUrl(request.featuredImage()) ? request.featuredImage() : null;
         String featuredImageUrl = null;
         if (featuredImage != null) {
             featuredImageUrl = mediaUtils.extractImagePathFromUrl(featuredImage);
@@ -101,7 +100,12 @@ public class PostCommandService extends PostBaseService {
         return convertToAdminPostDetailDTO(post);
     }
 
-    @CacheEvict(value = "post-admin", key = "#postId")
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "post-admin-list", allEntries = true),
+        @CacheEvict(cacheNames = "post-public-list", allEntries = true),
+        @CacheEvict(cacheNames = "post-detail", key = "'admin:detail:' + #postId"),
+        @CacheEvict(cacheNames = "post-detail", key = "'public:detail:' + #postId")
+    })
     @Transactional
     public AdminPostDetailDTO patchPostForAdmin(Long postId, PatchPostRequestDTO request, UserPrincipal author) {
         if (author == null) {
@@ -114,10 +118,10 @@ public class PostCommandService extends PostBaseService {
         }
         // Sanitizing request
         List<String> imagePaths = new ArrayList<>();
-        String title = sanitizeStringContent(request.title());
-        String content = normalizeImageUrlsAndSanitizeHtmlContent(request.content(), imagePaths);
-        String description = sanitizeStringContent(request.description());
-        String featuredImage = sanitizerUtils.isAllowedMediaUrl(request.featuredImage()) ? request.featuredImage() : null;
+        String title = request.title();
+        String content = normalizeMarkdownAndExtractImageUrls(request.content(), imagePaths);
+        String description = request.description();
+        String featuredImage = mediaUtils.isAllowedMediaUrl(request.featuredImage()) ? request.featuredImage() : null;
         String featuredImageUrl = null;
         if (featuredImage != null) {
             featuredImageUrl = mediaUtils.extractImagePathFromUrl(featuredImage);
@@ -153,7 +157,12 @@ public class PostCommandService extends PostBaseService {
         return convertToAdminPostDetailDTO(postRepository.save(post));
     }
 
-    @CacheEvict(value = "post-admin", key = "#postId")
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "post-admin-list", allEntries = true),
+        @CacheEvict(cacheNames = "post-public-list", allEntries = true),
+        @CacheEvict(cacheNames = "post-detail", key = "'admin:detail:' + #postId"),
+        @CacheEvict(cacheNames = "post-detail", key = "'public:detail:' + #postId")
+    })
     @Transactional
     public AdminPostDetailDTO putPostForAdmin(Long postId, PutPostRequestDTO request, UserPrincipal author) {
         if (author == null) {
@@ -178,10 +187,10 @@ public class PostCommandService extends PostBaseService {
         }
         // Sanitizing request
         List<String> imagePaths = new ArrayList<>();
-        String title = sanitizeStringContent(request.title());
-        String content = normalizeImageUrlsAndSanitizeHtmlContent(request.content(), imagePaths);
-        String description = sanitizeStringContent(request.description());
-        String featuredImage = sanitizerUtils.isAllowedMediaUrl(request.featuredImage()) ? request.featuredImage() : null;
+        String title = request.title();
+        String content = normalizeMarkdownAndExtractImageUrls(request.content(), imagePaths);
+        String description = request.description();
+        String featuredImage = mediaUtils.isAllowedMediaUrl(request.featuredImage()) ? request.featuredImage() : null;
         String featuredImageUrl = null;
         if (featuredImage != null) {
             featuredImageUrl = mediaUtils.extractImagePathFromUrl(featuredImage);
@@ -210,6 +219,12 @@ public class PostCommandService extends PostBaseService {
         return convertToAdminPostDetailDTO(postRepository.save(post));
     }
 
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "post-admin-list", allEntries = true),
+        @CacheEvict(cacheNames = "post-public-list", allEntries = true),
+        @CacheEvict(cacheNames = "post-detail", key = "'admin:detail:' + #postId"),
+        @CacheEvict(cacheNames = "post-detail", key = "'public:detail:' + #postId")
+    })
     @Transactional
     public void deactivatePostForAdmin(Long postId, UserPrincipal author) {
         if (author == null) {
@@ -263,38 +278,32 @@ public class PostCommandService extends PostBaseService {
         }
     }
 
-    private String normalizeImageUrlsAndSanitizeHtmlContent(String content, List<String> extractedImagePaths) {
-        if (content == null || content.isBlank()) return content;
-        Document doc = Jsoup.parseBodyFragment(content);
-        doc.outputSettings().prettyPrint(false);
-        // Images: keep only allowlisted hosts; otherwise remove src or the whole tag
-        for (Element img : doc.select("img[src]")) {
-            String src = img.attr("abs:src");
-            if (!sanitizerUtils.isAllowedMediaUrl(img.attr("src"))) {
-                img.remove();
-            }
-            else { // Normalizing image url (keeping only relative image paths) and saving it for updates
-                src = mediaUtils.extractImagePathFromUrl(src);
-                img.attr("src", src);
-                extractedImagePaths.add(src);
-            }
-        }
-        // Links: allow https only + optional external hosts; harden attributes
-        for (Element a : doc.select("a[href]")) {
-            String href = a.attr("href").trim();
-            if (!sanitizerUtils.isAllowedLink(href)) {
-                a.unwrap(); // keep text, drop the <a>
-                continue;
-            }
-            a.attr("rel", "noopener noreferrer nofollow");
-            if (a.hasAttr("target")) {
-                a.attr("target", "_blank");
-            }
-        }
-        return sanitizerUtils.sanitizeHtmlDocument(doc);
-    }
+    private String normalizeMarkdownAndExtractImageUrls(String content, List<String> imagePaths) {
+        Node document = markdownUtils.parseDocument(content);
+        List<String> errors = new ArrayList<>();
 
-    private String sanitizeStringContent(String str) {
-        return sanitizerUtils.sanitizeString(str);
+        document.accept(new AbstractVisitor() {
+            @Override
+            public void visit(Link link) {
+                String url = markdownUtils.normalizeUrl(link.getDestination(), "link", errors);
+                if (!errors.isEmpty()) {
+                    throw new IllegalArgumentException(String.join("; ", errors));
+                }
+                link.setDestination(url);
+                super.visit(link);
+            }
+
+            @Override
+            public void visit(Image image) {
+                String url = markdownUtils.normalizeUrl(image.getDestination(), "image", errors);
+                if (!errors.isEmpty()) {
+                    throw new IllegalArgumentException(String.join("; ", errors));
+                }
+                imagePaths.add(url.split("[?#]")[0]); // Don't store queries and fragments to database
+                image.setDestination(url);
+                super.visit(image);
+            }
+        });
+        return markdownUtils.renderDocument(document);
     }
 }

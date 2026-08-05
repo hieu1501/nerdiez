@@ -107,11 +107,11 @@
 			<artifactId>caffeine</artifactId>
 			<version>3.2.4</version>
 		</dependency>
-		<!-- Source: https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+		<!-- Source: https://mvnrepository.com/artifact/org.commonmark/commonmark -->
 		<dependency>
-			<groupId>org.jsoup</groupId>
-			<artifactId>jsoup</artifactId>
-			<version>1.22.2</version>
+			<groupId>org.commonmark</groupId>
+			<artifactId>commonmark</artifactId>
+			<version>0.29.0</version>
 			<scope>compile</scope>
 		</dependency>
 	</dependencies>

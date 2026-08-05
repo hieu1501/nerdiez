@@ -22,7 +22,7 @@ public class CategoryQueryService {
     public List<CategoryDetailDTO> getAllCategories() {
         return categoryRepository.findAll()
                 .stream()
-                .map(c -> new CategoryDetailDTO(c.getId(), c.getName(), c.getSlugName(), c.getDescription()))
+                .map(CategoryDetailDTO::from)
                 .collect(Collectors.toList());
     }
 

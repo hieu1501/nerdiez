@@ -9,6 +9,19 @@ import ToastContainer from "@/components/ui/toast/Toast";
 import Badge from "@/components/ui/badge/Badge";
 import Button from "@/components/ui/button/Button";
 import TableOfContents from "@/components/management/TableOfContents";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
+import rehypeSlug from "rehype-slug";
+import rehypeRaw from "rehype-raw";
+import rehypePrism from "rehype-prism-plus";
+import rehypeFigure from "@/lib/rehypeFigure";
+
+function stripHtmlWrapper(s: string): string {
+  return s
+    .replace(/^<html><head><\/head><body>\s*/i, "")
+    .replace(/\s*<\/body><\/html>$/i, "");
+}
 
 export default function ArticleDetailPage() {
   const router = useRouter();
@@ -125,12 +138,17 @@ export default function ArticleDetailPage() {
           {article.content && (
             <div className="flex gap-8">
               <div className="w-[85%] min-w-0">
-                <div className="prose prose-lg max-w-none dark:prose-invert">
-                  <div dangerouslySetInnerHTML={{ __html: article.content }} />
+                <div className="prose max-w-none dark:prose-invert break-words">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    rehypePlugins={[rehypeRaw, rehypePrism, rehypeFigure, rehypeSlug]}
+                  >
+                    {stripHtmlWrapper(article.content)}
+                  </ReactMarkdown>
                 </div>
               </div>
-              <aside className="hidden xl:block flex-1">
-                <TableOfContents content={article.content} />
+              <aside className="hidden xl:block flex-1 min-w-0">
+                <TableOfContents content={stripHtmlWrapper(article.content)} />
               </aside>
             </div>
           )}

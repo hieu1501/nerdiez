@@ -16,6 +16,22 @@ export interface Article {
   isActive: boolean;
 }
 
+export interface ArticlePage {
+  items: Article[];
+  size: number;
+  offset: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface ArticleQuery {
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
 export interface ArticlePayload {
   title: string;
   content: string;
@@ -27,7 +43,14 @@ export interface ArticlePayload {
 }
 
 export const articlesService = {
-  getAll: () => api.get<Article[]>("/articles/all", true),
+  getAll: (params?: ArticleQuery) => {
+    const qs = new URLSearchParams();
+    if (params?.page !== undefined) qs.set("page", String(params.page));
+    if (params?.size !== undefined) qs.set("size", String(params.size));
+    if (params?.sort) qs.set("sort", params.sort);
+    const query = qs.toString();
+    return api.get<ArticlePage>(`/articles/all${query ? `?${query}` : ""}`, true);
+  },
 
   getById: (id: number) => api.get<Article>(`/articles/${id}`, true),
 
