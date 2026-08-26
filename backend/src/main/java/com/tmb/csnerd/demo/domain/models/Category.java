@@ -23,4 +23,7 @@ public class Category {
 
     @Column(name = "description", length = 512)
     private String description;
+
+    @Column(name = "is_active")
+    private Boolean isActive = false;
 }

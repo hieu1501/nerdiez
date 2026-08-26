@@ -23,7 +23,7 @@ public class UserController {
     public ResponseEntity<UserProfileResponseDTO> getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
         UserPrincipal userPrincipal = userPrincipalService.getUserBySubject(jwt.getSubject())
                 .orElseThrow(() -> new UserNotFoundException(jwt.getSubject()));
-        UserProfileResponseDTO body = new UserProfileResponseDTO(userPrincipal.getUsername(), userPrincipal.getUsername());
+        UserProfileResponseDTO body = UserProfileResponseDTO.from(userPrincipal);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(body);

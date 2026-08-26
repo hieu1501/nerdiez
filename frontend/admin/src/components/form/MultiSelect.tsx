@@ -9,9 +9,12 @@ interface Option {
 interface MultiSelectProps {
   label: string;
   options: Option[];
+  value?: string[];
   defaultSelected?: string[];
   onChange?: (selected: string[]) => void;
   disabled?: boolean;
+  placeholder?: string;
+  emptyMessage?: string;
 }
 
 const CHIP_LIMIT = 3;
@@ -19,12 +22,16 @@ const CHIP_LIMIT = 3;
 const MultiSelect: React.FC<MultiSelectProps> = ({
   label,
   options,
+  value,
   defaultSelected = [],
   onChange,
   disabled = false,
+  placeholder = "Select topics...",
+  emptyMessage = "No results",
 }) => {
-  const [selectedOptions, setSelectedOptions] =
+  const [internalSelectedOptions, setInternalSelectedOptions] =
     useState<string[]>(defaultSelected);
+  const selectedOptions = value ?? internalSelectedOptions;
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,7 +93,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     const newSelectedOptions = selectedOptions.includes(optionValue)
       ? selectedOptions.filter((value) => value !== optionValue)
       : [...selectedOptions, optionValue];
-    setSelectedOptions(newSelectedOptions);
+    if (value === undefined) setInternalSelectedOptions(newSelectedOptions);
     if (onChange) onChange(newSelectedOptions);
   };
 
@@ -94,7 +101,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     const newSelectedOptions = selectedOptions.filter(
       (value) => value !== optionValue,
     );
-    setSelectedOptions(newSelectedOptions);
+    if (value === undefined) setInternalSelectedOptions(newSelectedOptions);
     if (onChange) onChange(newSelectedOptions);
   };
 
@@ -118,6 +125,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         <div
           role="button"
           tabIndex={disabled ? -1 : 0}
+          aria-disabled={disabled}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           onClick={toggleDropdown}
@@ -127,7 +135,9 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
               toggleDropdown();
             }
           }}
-          className={`flex min-h-11 w-full cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:shadow-focus-ring disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-300 ${
+          className={`flex min-h-11 w-full items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-300 ${
+            disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+          } ${
             isOpen
               ? "border-brand-300 shadow-focus-ring dark:border-brand-300"
               : ""
@@ -176,7 +186,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
               </>
             ) : (
               <span className="text-sm text-gray-400 dark:text-white/50">
-                Select topics...
+                {placeholder}
               </span>
             )}
           </span>
@@ -223,7 +233,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             <ul className="max-h-60 overflow-y-auto p-1">
               {filteredOptions.length === 0 ? (
                 <li className="px-3 py-2 text-sm text-gray-400 dark:text-white/50">
-                  No results
+                  {options.length === 0 ? emptyMessage : "No results"}
                 </li>
               ) : (
                 filteredOptions.map((option) => {

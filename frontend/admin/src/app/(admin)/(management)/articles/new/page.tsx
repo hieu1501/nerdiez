@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { articlesService } from "@/services/articles";
 import { categoriesService, Category } from "@/services/categories";
@@ -47,6 +47,22 @@ export default function NewArticlePage() {
       .catch(() => {});
   }, []);
 
+  const availableTopics = useMemo(
+    () => topics.filter((topic) => topic.category.categoryId === categoryId),
+    [categoryId, topics],
+  );
+
+  const handleCategoryChange = (value: string) => {
+    const nextCategoryId = Number(value);
+    if (nextCategoryId === categoryId) return;
+
+    if (selectedTopicIds.length > 0) {
+      toast.info("Selected topics were cleared because the category changed.");
+    }
+    setCategoryId(nextCategoryId);
+    setSelectedTopicIds([]);
+  };
+
   const handleImageChange = async (file: File | null) => {
     if (!file) {
       setFeaturedImage("");
@@ -80,6 +96,11 @@ export default function NewArticlePage() {
     setConfirmDialog({ show: false, status: "" });
     if (!title.trim() || !categoryId || selectedTopicIds.length === 0) {
       toast.error("Title, category, and at least one topic are required.");
+      return;
+    }
+    const availableTopicIds = new Set(availableTopics.map((topic) => topic.topicId));
+    if (selectedTopicIds.some((topicId) => !availableTopicIds.has(Number(topicId)))) {
+      toast.error("Every selected topic must belong to the selected category.");
       return;
     }
     if (featuredImage && !isAllowedImageUrl(featuredImage)) {
@@ -161,19 +182,28 @@ export default function NewArticlePage() {
             }))}
             placeholder="Select category"
             defaultValue={categoryId ? String(categoryId) : ""}
-            onChange={(value) => setCategoryId(Number(value))}
+            onChange={handleCategoryChange}
           />
         </div>
         <div className="w-60">
           <MultiSelect
             label="Topics"
-            options={topics.map((t) => ({
+            options={availableTopics.map((t) => ({
               value: String(t.topicId),
               text: t.name,
               selected: selectedTopicIds.includes(String(t.topicId)),
             }))}
-            defaultSelected={selectedTopicIds}
+            value={selectedTopicIds}
             onChange={setSelectedTopicIds}
+            disabled={!categoryId}
+            placeholder={
+              !categoryId
+                ? "Select a category first"
+                : availableTopics.length === 0
+                  ? "No topics available"
+                  : "Select topics..."
+            }
+            emptyMessage="No topics available for this category"
           />
         </div>
         <div className="w-44">

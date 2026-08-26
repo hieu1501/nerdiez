@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -31,12 +31,13 @@ export function useToast(duration = 4000) {
     [duration, remove],
   );
 
-  return {
-    toasts,
-    success: (msg: string) => show("success", msg),
-    error: (msg: string) => show("error", msg),
-    warning: (msg: string) => show("warning", msg),
-    info: (msg: string) => show("info", msg),
-    remove,
-  };
+  const success = useCallback((message: string) => show("success", message), [show]);
+  const error = useCallback((message: string) => show("error", message), [show]);
+  const warning = useCallback((message: string) => show("warning", message), [show]);
+  const info = useCallback((message: string) => show("info", message), [show]);
+
+  return useMemo(
+    () => ({ toasts, success, error, warning, info, remove }),
+    [toasts, success, error, warning, info, remove],
+  );
 }

@@ -3,10 +3,9 @@ package com.tmb.csnerd.demo.domain.services.auth;
 import com.tmb.csnerd.demo.domain.models.PostsVote;
 import com.tmb.csnerd.demo.domain.models.User;
 import com.tmb.csnerd.demo.domain.models.UserRole;
-import com.tmb.csnerd.demo.domain.repositories.UserRepository;
+import com.tmb.csnerd.demo.domain.repositories.user.UserRepository;
 import com.tmb.csnerd.demo.domain.security.UserPrincipal;
-import com.tmb.csnerd.demo.domain.repositories.UserRoleRepository;
-import com.tmb.csnerd.demo.exceptions.user.UserNotFoundException;
+import com.tmb.csnerd.demo.domain.repositories.user.UserRoleRepository;
 import com.tmb.csnerd.demo.utils.AuthUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,10 +31,7 @@ public class UserPrincipalService implements UserDetailsService {
     }
 
     public Optional<UserPrincipal> getUserBySubject(String subject) {
-        Optional<UserPrincipal> userPrincipal
-                = userRepository.findBySubject(subject)
-                .map(UserPrincipal::new);
-        return userPrincipal;
+        return userRepository.findBySubject(subject).map(UserPrincipal::new);
     }
 
     @Transactional
@@ -55,6 +51,7 @@ public class UserPrincipalService implements UserDetailsService {
     }
 
     public UserPrincipal convertJwtToUserPrincipal(Jwt jwt) {
+        if (jwt == null) return null;
         String subject = jwt.getSubject();
         return getUserBySubject(subject).orElse(null);
     }

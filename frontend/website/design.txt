@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+ <head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260805-23-5ef3adf","C":{"Abril Fatface":"YACgEZbkUVE,0","Alfa Slab One":"YACgEYS9sJU,0","Anton":"YACgEcYqQ-A,0","Archivo":"YAHO2-t-jNE,0","Arial":"YAGyDvJ_4Ts,0","Bebas Neue":"YACgESME5ew,0","Bricolage Grotesque":"YAFyMcdwzpc,0","Canva Sans":"YAFLd8sKbwc,2","Caveat":"YALBs2ploWQ,0","Comic Sans MS":"YAHO2VMiyZo,0","Cormorant Garamond":"YAFdJhX-538,0","Courier New":"YAGzXiGs0_8,0","DM Sans":"YAD1aU3sLnI,0","DM Serif Display":"YAD1aYG82rc,0","Forum":"YACgEcnnqB4,0","Fraunces":"YAEul-FRQw4,0","Georgia":"YAGzXkO0pEM,0","Helvetica Neue":"YAFcf6CtJfI,0","Impact":"YAFcfnjI7Vk,0","Inter":"YAFdJvSyp_k,3","Iowan Old Style":"YAGNIFa8j9o,0","Jacques Francois":"YAHO2a5g66Q,0","JetBrains Mono":"YAFdJksXcAk,0","Libre Baskerville":"YACgEUFdPdA,0","Manrope":"YAHO2b2feC4,0","Merriweather":"YACgEXvHxxs,0","Montserrat":"YADLjI9qxTA,0","Nunito":"YACgEX8C5Gg,0","Oleo Script":"YACgEQQ14jI,0","Phantom Sans":"YAHO2E8Pb88,0","Playfair Display":"YACgEYmuCJE,0","Poppins":"YAFdJjbTu24,1","Press Start 2P":"YAFyGr-8pmQ,0","Quicksand":"YADWjpfPmdk,0","Raleway":"YACgEVg3xZg,0","Segoe UI":"YAHNdRD1Klw,0","Source Sans 3":"YAG4lO1Mj10,0","Spectral":"YAHO2rVUHIM,0","Times New Roman":"YAGzXW3gftg,0","Times":"YAGzXW3gftg,0","Ubuntu":"YACgERDU--Q,0","Work Sans":"YAGXhLOKv44,0","Yellowtail":"YACgEYG4kG4,0","ui-monospace":"YADlN8CFZ8Q,0","ui-sans-serif":"YACkoN-xg4g,0"}}');</script><script src="/_sdk/7949ff62d67710d5.telemetry_sdk.js" integrity="sha512-KIvXA82Di44YY/RH9/63A9MuTuavYgDFG8PfErJn7Wli4K0LAOk+coo/aPXk3+ZNL96nHh9VYD4PE+fLes+laQ=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knowledge Hub</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/0e8d3a91e1c6f495.data_sdk.js" integrity="sha512-c00oDoGjsMgluCLLEyVl3suwEkgjOGGplVFbsilUoBg4aMKNmsL3mwsc9r0dPn95qiSZyjBousQXgROkAW7p/w=="></script>
+  <script src="/_sdk/04cc6185e046f597.resizing_sdk.js" integrity="sha512-CiE/G92aQF0nxneFg1kdOvXih8sQ1Z2a2QI3+r/WvzJwQqH6+IyB3iL07OkJmpm3ABAaf07+FnqWny98f5sR6w=="></script>
+  <style>
+    :root {
+      --paper: #ffffff;
+      --ink: #161616;
+      --muted: #6d6d6d;
+      --line: #dedede;
+      --soft: #f5f5f4;
+      --button: #161616;
+      --button-text: #ffffff;
+      --drawer: #ffffff;
+      --overlay: rgba(0, 0, 0, .35);
+    }
+
+    body.dark-mode {
+      --paper: #000000;
+      --ink: #ffffff;
+      --muted: #b4b4ad;
+      --line: #3c3c3a;
+      --soft: #242422;
+      --button: #f5f5f0;
+      --button-text: #161616;
+      --drawer: #1d1d1b;
+      --overlay: rgba(0, 0, 0, .65);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "iA Writer Quattro", Georgia, serif;
+      color: var(--ink);
+      background: var(--paper);
+      transition: background .2s ease, color .2s ease;
+    }
+
+    button { font: inherit; }
+
+    .nav-shell,
+    .article-card,
+    .reader-panel,
+    .profile-panel {
+      background: var(--paper);
+      border-color: var(--line);
+    }
+
+    .article-card {
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .article-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--ink);
+    }
+
+    .nav-action {
+      color: var(--muted);
+      transition: color .18s ease, background .18s ease;
+    }
+
+    .nav-action:hover,
+    .nav-action[aria-pressed="true"] {
+      color: var(--ink);
+      background: var(--soft);
+    }
+
+    .filter-btn {
+      border-color: var(--line);
+      color: var(--muted);
+      transition: background .18s ease, color .18s ease, border-color .18s ease;
+    }
+
+    .filter-btn[aria-pressed="true"],
+    .subtopic-btn.active {
+      color: var(--button-text);
+      background: var(--button);
+      border-color: var(--button);
+    }
+
+    .subtopic-btn {
+      color: var(--muted);
+      border-color: var(--line);
+    }
+
+    .vote-btn {
+      color: var(--muted);
+      border-color: var(--line);
+      transition: color .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .vote-btn:hover { color: var(--ink); }
+
+    .vote-btn.voted-up {
+      color: var(--ink);
+      border-color: var(--ink);
+      background: var(--soft);
+    }
+
+    .vote-btn.voted-down {
+      color: var(--ink);
+      border-color: var(--ink);
+      background: var(--soft);
+    }
+
+    .reader-shell {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease;
+    }
+
+    .reader-shell.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .reader-panel {
+      transform: translateX(100%);
+      transition: transform .25s ease;
+      background: var(--drawer);
+    }
+
+    .reader-shell.open .reader-panel { transform: translateX(0); }
+
+    .profile-panel {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-6px);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .profile-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .theme-label-dark { display: none; }
+    body.dark-mode .theme-label-light { display: none; }
+    body.dark-mode .theme-label-dark { display: inline; }
+    body.dark-mode .nav-shell,
+    body.dark-mode .article-card,
+    body.dark-mode .reader-panel,
+    body.dark-mode .profile-panel,
+    body.dark-mode [data-template-id="top-nav"],
+    body.dark-mode [data-template-id="article-card"] {
+      background: #000000 !important;
+      color: #ffffff !important;
+    }
+    body.dark-mode [data-template-id="article-title"],
+    body.dark-mode [data-template-id="read-button"],
+    body.dark-mode [data-template-id="nav-brand"],
+    body.dark-mode [data-template-id="articles-nav-button"],
+    body.dark-mode [data-template-id="profile-nav-button"] {
+      color: #ffffff !important;
+    }
+
+    .reveal {
+      animation: reveal .45s both;
+    }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 3px;
+    }
+  </style>
+ </head>
+ <body data-template-id="__page-root" class="w-full min-h-screen">
+  <header class="w-full border-b" style="border-color:var(--line);">
+   <nav data-template-id="top-nav" class="canva-header nav-shell mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 sm:px-8" aria-label="Main navigation">
+    <a href="#top" class="flex items-center no-underline" aria-label="Knowledge Hub home"> <span data-template-id="nav-brand" class="canva-text font-bold"></span> </a>
+    <div class="flex items-center gap-1">
+     <button data-template-id="articles-nav-button" id="articles-nav-button" class="canva-button nav-action inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm" type="button"></button> <button data-template-id="profile-nav-button" id="profile-nav-button" class="canva-button nav-action inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm" type="button" aria-expanded="false" aria-controls="profile-panel"></button> <button id="theme-toggle" class="nav-action inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm" type="button" aria-pressed="false"> <span data-template-id="light-mode-label" class="canva-text theme-label-light"></span> <span data-template-id="dark-mode-label" class="canva-text theme-label-dark"></span> </button>
+    </div>
+   </nav>
+   <div id="profile-panel" class="profile-panel absolute right-5 z-40 mt-2 w-72 rounded-lg border p-5 shadow-lg sm:right-8" role="region" aria-label="Profile information">
+    <p data-template-id="profile-panel-title" class="canva-text font-bold"></p>
+    <p data-template-id="profile-panel-copy" class="canva-text mt-2 text-sm leading-6" style="color:var(--muted);"></p>
+   </div>
+  </header>
+  <main id="top" class="w-full">
+   <section class="mx-auto grid w-full max-w-6xl gap-9 px-5 py-14 sm:px-8 md:grid-cols-[1.2fr_.8fr] md:items-end md:py-20">
+    <div class="reveal">
+     <p data-template-id="eyebrow" class="canva-tag mb-5 text-sm font-bold uppercase tracking-[.16em]"></p>
+     <h1 data-template-id="site-title" class="canva-text max-w-3xl font-bold leading-[1.12]"></h1>
+     <p data-template-id="site-intro" class="canva-text mt-5 max-w-xl text-lg leading-8" style="color:var(--muted);"></p>
+    </div>
+    <div class="reveal border-l pl-6 md:pl-8" style="border-color:var(--line); animation-delay:.08s;">
+     <img data-template-id="hero-image" loading="lazy" class="canva-image h-52 w-full rounded-md object-cover sm:h-64">
+     <p data-template-id="image-note" class="canva-text mt-3 text-sm leading-6" style="color:var(--muted);"></p>
+    </div>
+   </section>
+   <section id="articles" aria-labelledby="articles-heading" class="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
+    <div class="flex flex-col justify-between gap-4 border-y py-7 sm:flex-row sm:items-end" style="border-color:var(--line);">
+     <div>
+      <h2 id="articles-heading" data-template-id="articles-heading-text" class="canva-text font-bold"></h2>
+      <p data-template-id="articles-support" class="canva-text mt-2 leading-6" style="color:var(--muted);"></p>
+     </div>
+     <p id="article-count" class="text-sm" style="color:var(--muted);" aria-live="polite"></p>
+    </div>
+    <div class="mt-6 flex flex-wrap gap-2" aria-label="Filter articles by topic">
+     <button data-template-id="filter-all" class="canva-button filter-btn rounded-md border px-3 py-2 text-sm" type="button" data-topic="All" aria-pressed="true"></button> <button data-template-id="filter-cs" class="canva-button filter-btn rounded-md border px-3 py-2 text-sm" type="button" data-topic="Computer Science" aria-pressed="false"></button> <button data-template-id="filter-economics" class="canva-button filter-btn rounded-md border px-3 py-2 text-sm" type="button" data-topic="Economics" aria-pressed="false"></button>
+    </div>
+    <div id="subtopic-filters" class="mt-3 flex flex-wrap gap-2" aria-label="Filter articles by subtopic"></div>
+    <div id="article-grid" class="mt-8 grid gap-px border md:grid-cols-2 xl:grid-cols-3" style="border-color:var(--line);"></div>
+    <div id="empty-state" class="hidden border px-6 py-14 text-center" style="border-color:var(--line);">
+     <i data-lucide="search-x" class="mx-auto h-6 w-6"></i>
+     <p data-template-id="empty-title" class="canva-text mt-4 font-bold"></p>
+     <p data-template-id="empty-copy" class="canva-text mt-2 text-sm" style="color:var(--muted);"></p>
+    </div>
+    <p id="status-message" class="mt-5 min-h-5 text-sm" style="color:var(--muted);" aria-live="polite"></p>
+   </section>
+  </main>
+  <template id="article-template">
+   <article data-template-id="article-card" class="canva-card article-card flex min-h-[270px] cursor-pointer flex-col border p-6" tabindex="0">
+    <div class="flex items-center justify-between gap-3">
+     <span data-field="topic" class="text-xs font-bold uppercase tracking-[.13em]" style="color:var(--muted);"></span> <span data-field="subtopic" class="text-xs" style="color:var(--muted);"></span>
+    </div>
+    <h3 data-template-id="article-title" class="canva-text mt-7 font-bold leading-snug" data-field="title"></h3>
+    <p data-template-id="article-excerpt" class="canva-text mt-3 text-sm leading-6" data-field="excerpt"></p>
+    <div class="mt-auto pt-7">
+     <p class="text-xs" style="color:var(--muted);"><span data-field="author"></span><span aria-hidden="true"> · </span><time data-field="date"></time></p>
+     <div class="mt-4 flex items-center justify-between gap-3">
+      <div class="flex gap-1">
+       <button type="button" class="vote-btn inline-flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs" data-vote="up"> <i data-lucide="arrow-up" class="h-3.5 w-3.5"></i><span data-field="upvotes"></span> </button> <button type="button" class="vote-btn inline-flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs" data-vote="down"> <i data-lucide="arrow-down" class="h-3.5 w-3.5"></i><span data-field="downvotes"></span> </button>
+      </div><button data-template-id="read-button" type="button" class="canva-button text-sm font-bold underline underline-offset-4"></button>
+     </div>
+    </div>
+   </article>
+  </template>
+  <aside id="reader" class="reader-shell fixed inset-0 z-50" aria-hidden="true">
+   <div id="reader-backdrop" class="absolute inset-0" style="background:var(--overlay);"></div>
+   <section class="reader-panel absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col overflow-y-auto border-l px-6 py-6 sm:px-10 sm:py-9" aria-label="Article reader" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-between">
+     <p id="reader-topic" class="text-xs font-bold uppercase tracking-[.15em]" style="color:var(--muted);"></p><button data-template-id="close-reader" id="close-reader" class="canva-button inline-flex h-9 w-9 items-center justify-center rounded-md border" style="border-color:var(--line);" type="button" aria-label="Close article reader"> <i data-lucide="x" class="h-4 w-4"></i> </button>
+    </div>
+    <header class="border-b pb-8 pt-10" style="border-color:var(--line);">
+     <p id="reader-subtopic" class="text-sm" style="color:var(--muted);"></p>
+     <h2 id="reader-title" class="mt-4 font-bold leading-tight"></h2>
+     <p id="reader-meta" class="mt-4 text-sm" style="color:var(--muted);"></p>
+    </header>
+    <div id="reader-content" class="whitespace-pre-line py-8 leading-8"></div>
+    <div class="mt-auto flex flex-wrap items-center justify-between gap-4 border-t pt-5" style="border-color:var(--line);">
+     <p data-template-id="reader-vote-note" class="canva-text text-sm" style="color:var(--muted);"></p>
+     <div class="flex gap-2">
+      <button id="reader-upvote" type="button" class="vote-btn inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm"> <i data-lucide="arrow-up" class="h-4 w-4"></i><span id="reader-up-count"></span> </button> <button id="reader-downvote" type="button" class="vote-btn inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm"> <i data-lucide="arrow-down" class="h-4 w-4"></i><span id="reader-down-count"></span> </button>
+     </div>
+    </div>
+   </section>
+  </aside>
+  <footer class="w-full border-t px-5 py-8 sm:px-8" style="border-color:var(--line);">
+   <p data-template-id="footer-note" class="canva-text mx-auto max-w-6xl text-sm" style="color:var(--muted);"></p>
+  </footer>
+  <script src="/_sdk/a7e3cd86f9fdaa2f.editing_sdk.js" integrity="sha512-Bik9h+JYuwAghvZ/lBuojdsYhf7jkD8F9umXnwtNo0dw/NSa1YODIJKtqfY7iq3EJZeic2MINdjhkesqLM/vFw=="></script>
+  <script>
+    let articles = [
+      { __backendId: 'sample-1', title: 'How Small Systems Shape Big Decisions', slug: 'small-systems', topic: 'Computer Science', subtopic: 'Systems Thinking', excerpt: 'A practical look at feedback loops, defaults, and the hidden structure behind everyday choices.', content: 'Small systems often shape large outcomes. By noticing feedback loops and defaults, we can make better decisions and design more useful tools.', author: 'Knowledge Hub', published_at: '2026-07-28T00:00:00Z', upvotes: 18, downvotes: 2 },
+      { __backendId: 'sample-2', title: 'The Economics of Enough', slug: 'economics-of-enough', topic: 'Economics', subtopic: 'Behavioral Economics', excerpt: 'Why more is not always better, and how constraints can clarify what we value.', content: 'The economics of enough begins with a simple question: what outcome are we actually trying to improve? Constraints can help turn abundance into intentional choice.', author: 'Knowledge Hub', published_at: '2026-07-21T00:00:00Z', upvotes: 24, downvotes: 1 },
+      { __backendId: 'sample-3', title: 'Learning in Public, Carefully', slug: 'learning-in-public', topic: 'Computer Science', subtopic: 'Knowledge Work', excerpt: 'A gentle framework for sharing unfinished ideas while keeping the quality bar high.', content: 'Sharing work in progress creates useful feedback and invites collaboration. The key is to label uncertainty clearly and keep learning visible.', author: 'Knowledge Hub', published_at: '2026-07-12T00:00:00Z', upvotes: 11, downvotes: 3 }
+    ];
+    let activeTopic = 'All';
+    let activeSubtopic = 'All';
+    let currentArticleId = null;
+    const localVotes = new Map();
+    const grid = document.getElementById('article-grid');
+    const reader = document.getElementById('reader');
+
+    function formatDate(value) {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+
+    function selectedArticles() {
+      return articles
+        .filter(article => activeTopic === 'All' || article.topic === activeTopic)
+        .filter(article => activeSubtopic === 'All' || article.subtopic === activeSubtopic)
+        .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+    }
+
+    function updateVoteAppearance(card, article) {
+      const vote = localVotes.get(article.__backendId);
+      card.querySelectorAll('[data-vote]').forEach(button => {
+        button.classList.toggle('voted-up', vote === 'up' && button.dataset.vote === 'up');
+        button.classList.toggle('voted-down', vote === 'down' && button.dataset.vote === 'down');
+        button.setAttribute('aria-pressed', String(vote === button.dataset.vote));
+      });
+      card.querySelector('[data-field="upvotes"]').textContent = article.upvotes || 0;
+      card.querySelector('[data-field="downvotes"]').textContent = article.downvotes || 0;
+    }
+
+    function updateCard(card, article) {
+      card.dataset.articleId = article.__backendId;
+      card.querySelector('[data-field="topic"]').textContent = article.topic;
+      card.querySelector('[data-field="subtopic"]').textContent = article.subtopic;
+      card.querySelector('[data-field="title"]').textContent = article.title;
+      card.querySelector('[data-field="excerpt"]').textContent = article.excerpt;
+      card.querySelector('[data-field="author"]').textContent = article.author;
+      card.querySelector('[data-field="date"]').textContent = formatDate(article.published_at);
+      updateVoteAppearance(card, article);
+    }
+
+    function createCard(article) {
+      const fragment = document.getElementById('article-template').content.cloneNode(true);
+      const card = fragment.querySelector('article');
+      updateCard(card, article);
+
+      card.addEventListener('click', event => {
+        if (!event.target.closest('[data-vote]')) openReader(article.__backendId);
+      });
+
+      card.addEventListener('keydown', event => {
+        if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('button')) {
+          event.preventDefault();
+          openReader(article.__backendId);
+        }
+      });
+
+      card.querySelector('[data-template-id="read-button"]').addEventListener('click', event => {
+        event.stopPropagation();
+        openReader(article.__backendId);
+      });
+
+      card.querySelectorAll('[data-vote]').forEach(button => {
+        button.setAttribute('aria-label', button.dataset.vote === 'up' ? 'Upvote article' : 'Downvote article');
+        button.addEventListener('click', event => {
+          event.stopPropagation();
+          vote(article.__backendId, button.dataset.vote);
+        });
+      });
+
+      return card;
+    }
+
+    function renderArticles() {
+      const visible = selectedArticles();
+      const existing = new Map([...grid.children].map(card => [card.dataset.articleId, card]));
+
+      visible.forEach(article => {
+        const card = existing.get(article.__backendId);
+        if (card) {
+          updateCard(card, article);
+          existing.delete(article.__backendId);
+        } else {
+          grid.appendChild(createCard(article));
+        }
+      });
+
+      existing.forEach(card => card.remove());
+
+      document.getElementById('empty-state').classList.toggle('hidden', visible.length !== 0);
+      document.getElementById('article-count').textContent = `${visible.length} ${visible.length === 1 ? 'article' : 'articles'}`;
+      lucide.createIcons();
+    }
+
+    function renderSubtopics() {
+      const source = activeTopic === 'All' ? articles : articles.filter(article => article.topic === activeTopic);
+      const subtopics = [...new Set(source.map(article => article.subtopic).filter(Boolean))].sort();
+
+      if (!subtopics.includes(activeSubtopic)) activeSubtopic = 'All';
+
+      const area = document.getElementById('subtopic-filters');
+      area.replaceChildren();
+
+      if (!subtopics.length) return;
+
+      ['All', ...subtopics].forEach(subtopic => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = subtopic === 'All' ? 'All subtopics' : subtopic;
+        button.className = `subtopic-btn rounded-md border px-3 py-1.5 text-xs ${activeSubtopic === subtopic ? 'active' : ''}`;
+        button.addEventListener('click', () => {
+          activeSubtopic = subtopic;
+          renderSubtopics();
+          renderArticles();
+        });
+        area.appendChild(button);
+      });
+    }
+
+    function openReader(id) {
+      const article = articles.find(item => item.__backendId === id);
+      if (!article) return;
+
+      currentArticleId = id;
+      document.getElementById('reader-topic').textContent = article.topic;
+      document.getElementById('reader-subtopic').textContent = article.subtopic;
+      document.getElementById('reader-title').textContent = article.title;
+      document.getElementById('reader-meta').textContent = `${article.author} · ${formatDate(article.published_at)}`;
+      document.getElementById('reader-content').textContent = article.content;
+      document.getElementById('reader-up-count').textContent = article.upvotes || 0;
+      document.getElementById('reader-down-count').textContent = article.downvotes || 0;
+
+      updateReaderVotes(article);
+      reader.classList.add('open');
+      reader.setAttribute('aria-hidden', 'false');
+      document.getElementById('close-reader').focus();
+    }
+
+    function updateReaderVotes(article) {
+      const vote = localVotes.get(article.__backendId);
+
+      [['up', 'reader-upvote'], ['down', 'reader-downvote']].forEach(([direction, id]) => {
+        const button = document.getElementById(id);
+        button.classList.toggle('voted-up', direction === 'up' && vote === 'up');
+        button.classList.toggle('voted-down', direction === 'down' && vote === 'down');
+        button.setAttribute('aria-pressed', String(vote === direction));
+      });
+    }
+
+    function closeReader() {
+      reader.classList.remove('open');
+      reader.setAttribute('aria-hidden', 'true');
+      currentArticleId = null;
+    }
+
+    async function vote(id, direction) {
+      const article = articles.find(item => item.__backendId === id);
+      if (!article) return;
+
+      const oldVote = localVotes.get(id);
+      if (oldVote === direction) {
+        document.getElementById('status-message').textContent = 'Your vote is already counted for this article.';
+        return;
+      }
+
+      const controls = [
+        ...document.querySelectorAll(`[data-article-id="${id}"] [data-vote]`),
+        ...document.querySelectorAll('#reader-upvote, #reader-downvote')
+      ];
+
+      controls.forEach(control => control.disabled = true);
+
+      const updated = { ...article };
+      if (oldVote === 'up') updated.upvotes = Math.max(0, (updated.upvotes || 0) - 1);
+      if (oldVote === 'down') updated.downvotes = Math.max(0, (updated.downvotes || 0) - 1);
+      if (direction === 'up') updated.upvotes = (updated.upvotes || 0) + 1;
+      if (direction === 'down') updated.downvotes = (updated.downvotes || 0) + 1;
+
+      localVotes.set(id, direction);
+      document.getElementById('status-message').textContent = 'Saving your vote…';
+
+      const result = await window.dataSdk.update(updated);
+
+      if (!result.isOk) {
+        if (oldVote) localVotes.set(id, oldVote);
+        else localVotes.delete(id);
+        document.getElementById('status-message').textContent = 'Your vote could not be saved. Please try again.';
+      } else {
+        document.getElementById('status-message').textContent = 'Thanks — your vote was saved.';
+      }
+
+      controls.forEach(control => control.disabled = false);
+      renderArticles();
+
+      if (currentArticleId === id) {
+        const refreshedArticle = articles.find(item => item.__backendId === id);
+        if (refreshedArticle) openReader(id);
+      }
+    }
+
+    function toggleTheme() {
+      const darkMode = document.body.classList.toggle('dark-mode');
+      const button = document.getElementById('theme-toggle');
+      button.setAttribute('aria-pressed', String(darkMode));
+      button.querySelector('.theme-icon-light').classList.toggle('hidden', darkMode);
+      button.querySelector('.theme-icon-dark').classList.toggle('hidden', !darkMode);
+    }
+
+    document.getElementById('articles-nav-button').addEventListener('click', () => {
+      document.getElementById('articles').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    document.getElementById('profile-nav-button').addEventListener('click', () => {
+      const panel = document.getElementById('profile-panel');
+      const isOpen = panel.classList.toggle('open');
+      document.getElementById('profile-nav-button').setAttribute('aria-expanded', String(isOpen));
+    });
+
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+    document.querySelectorAll('.filter-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        activeTopic = button.dataset.topic;
+        activeSubtopic = 'All';
+        document.querySelectorAll('.filter-btn').forEach(item => {
+          item.setAttribute('aria-pressed', String(item === button));
+        });
+        renderSubtopics();
+        renderArticles();
+      });
+    });
+
+    document.getElementById('close-reader').addEventListener('click', closeReader);
+    document.getElementById('reader-backdrop').addEventListener('click', closeReader);
+    document.getElementById('reader-upvote').addEventListener('click', () => currentArticleId && vote(currentArticleId, 'up'));
+    document.getElementById('reader-downvote').addEventListener('click', () => currentArticleId && vote(currentArticleId, 'down'));
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        closeReader();
+        document.getElementById('profile-panel').classList.remove('open');
+        document.getElementById('profile-nav-button').setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    const dataHandler = {
+      onDataChanged(data) {
+        if (data.length) articles = data;
+        renderSubtopics();
+        renderArticles();
+
+        if (currentArticleId) {
+          const current = articles.find(article => article.__backendId === currentArticleId);
+          if (current) openReader(currentArticleId);
+          else closeReader();
+        }
+      }
+    };
+
+    async function initialize() {
+      const result = await window.dataSdk.init(dataHandler);
+      if (!result.isOk) {
+        document.getElementById('status-message').textContent = 'Articles are temporarily unavailable. Please refresh and try again.';
+      }
+    }
+
+    lucide.createIcons();
+    initialize();
+  </script>
+ </body>
+</html>

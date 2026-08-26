@@ -29,29 +29,63 @@ public class MarkdownUtils {
         this.mediaUtils = mediaUtils;
     }
 
-    public Node parseDocument(String document) {
-        return parser.parse(document);
+    public String normalizeMarkdownAndExtractImageUrls(String content, List<String> imagePaths) {
+        Node document = parseDocument(content);
+        List<String> errors = new ArrayList<>();
+
+        document.accept(new AbstractVisitor() {
+            @Override
+            public void visit(Link link) {
+                String url = normalizeUrl(link.getDestination(), "link", errors);
+                if (!errors.isEmpty()) {
+                    throw new IllegalArgumentException(String.join("; ", errors));
+                }
+                link.setDestination(url);
+                super.visit(link);
+            }
+
+            @Override
+            public void visit(Image image) {
+                String url = normalizeUrl(image.getDestination(), "image", errors);
+                if (!errors.isEmpty()) {
+                    throw new IllegalArgumentException(String.join("; ", errors));
+                }
+                imagePaths.add(url.split("[?#]")[0]); // Don't store queries and fragments to database
+                image.setDestination(url);
+                super.visit(image);
+            }
+        });
+        return renderDocument(document);
     }
 
-    public String renderDocument(Node node) {
-        return renderer.render(node);
-    }
-
-    public String denormalize(String input) {
-        Node document = parser.parse(input);
+     public String denormalizeImageUrlsInContent(String content) {
+        Node document = parseDocument(content);
 
         document.accept(new AbstractVisitor() {
             @Override
             public void visit(Image image) {
                 String url = denormalizeUrl(image.getDestination(), "image");
-                image.setDestination(url);
-                super.visit(image);
+                if (url != null) {
+                    image.setDestination(url);
+                    super.visit(image);
+                }
+                else {
+                    image.unlink();
+                }
             }
         });
-        return renderer.render(document);
+        return renderDocument(document);
     }
 
-    public String normalizeUrl(String value, String type, List<String> errors) {
+    private Node parseDocument(String document) {
+        return parser.parse(document);
+    }
+
+    private String renderDocument(Node node) {
+        return renderer.render(node);
+    }
+
+    private String normalizeUrl(String value, String type, List<String> errors) {
         if (value == null || value.isBlank()) {
             errors.add("Url is blank");
             return value;
@@ -99,7 +133,7 @@ public class MarkdownUtils {
         return value;
     }
 
-    public String denormalizeUrl(String value, String type) {
+    private String denormalizeUrl(String value, String type) {
         if (value == null || value.isBlank()) {
             return null;
         }

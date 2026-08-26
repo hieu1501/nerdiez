@@ -3,7 +3,7 @@ package com.tmb.csnerd.demo.domain.services.refreshtoken;
 import com.tmb.csnerd.demo.domain.models.User;
 import com.tmb.csnerd.demo.domain.security.UserPrincipal;
 import com.tmb.csnerd.demo.domain.models.RefreshToken;
-import com.tmb.csnerd.demo.domain.repositories.RefreshTokenRepository;
+import com.tmb.csnerd.demo.domain.repositories.auth.RefreshTokenRepository;
 import com.tmb.csnerd.demo.exceptions.auth.InvalidTokenException;
 import com.tmb.csnerd.demo.utils.AuthUtils;
 import jakarta.transaction.Transactional;

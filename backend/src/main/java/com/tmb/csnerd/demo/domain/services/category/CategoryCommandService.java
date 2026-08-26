@@ -1,69 +1,97 @@
 package com.tmb.csnerd.demo.domain.services.category;
 
-import com.tmb.csnerd.demo.dto.category.CategoryDetailDTO;
-import com.tmb.csnerd.demo.dto.category.CreateCategoryRequestDTO;
-import com.tmb.csnerd.demo.dto.category.ReplaceCategoryRequestDTO;
-import com.tmb.csnerd.demo.dto.category.UpdateCategoryRequestDTO;
+import com.tmb.csnerd.demo.domain.cache.category.CategoryChangedEvent;
+import com.tmb.csnerd.demo.domain.cache.post.PostListChangedEvent;
+import com.tmb.csnerd.demo.domain.services.post.PostQueryService;
+import com.tmb.csnerd.demo.dto.category.adminresponse.CategoryAdminDetailDTO;
+import com.tmb.csnerd.demo.dto.category.request.CreateCategoryRequestDTO;
+import com.tmb.csnerd.demo.dto.category.request.ReplaceCategoryRequestDTO;
+import com.tmb.csnerd.demo.dto.category.request.UpdateCategoryRequestDTO;
 import com.tmb.csnerd.demo.exceptions.ConflictStatusException;
-import com.tmb.csnerd.demo.exceptions.category.CategoryNotFoundException;
+import com.tmb.csnerd.demo.exceptions.category.CategoryByIdNotFoundException;
 import com.tmb.csnerd.demo.domain.models.Category;
-import com.tmb.csnerd.demo.domain.repositories.CategoryRepository;
-import com.tmb.csnerd.demo.domain.repositories.PostRepository;
+import com.tmb.csnerd.demo.domain.repositories.category.CategoryRepository;
+import com.tmb.csnerd.demo.domain.repositories.post.PostRepository;
 import com.tmb.csnerd.demo.utils.SlugifyUtils;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Set;
 
 @AllArgsConstructor
 @Service
 public class CategoryCommandService {
     private final CategoryRepository categoryRepository;
-    private final PostRepository postRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final PostQueryService postQueryService;
 
-    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
-    public CategoryDetailDTO createCategory(CreateCategoryRequestDTO request) {
+    public CategoryAdminDetailDTO createCategory(CreateCategoryRequestDTO request) {
         Category category = new Category();
         category.setName(request.name());
         category.setSlugName(SlugifyUtils.slugify(request.name()));
         category.setDescription(request.description());
-        return CategoryDetailDTO.from(categoryRepository.save(category));
+        if (request.isActive() != null) category.setIsActive(request.isActive());
+        category = categoryRepository.save(category);
+        eventPublisher.publishEvent(new CategoryChangedEvent());
+        return CategoryAdminDetailDTO.from(category);
     }
 
-    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
-    public CategoryDetailDTO patchCategory(Long categoryId, UpdateCategoryRequestDTO request) {
+    public CategoryAdminDetailDTO patchCategory(Long categoryId, UpdateCategoryRequestDTO request) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new CategoryNotFoundException(categoryId));
-        modifyCategoryIfChanged(category, request.name(), request.description());
-        return CategoryDetailDTO.from(categoryRepository.save(category));
+                .orElseThrow(() -> new CategoryByIdNotFoundException(categoryId));
+        modifyCategoryIfChanged(category, request.name(), request.description(), request.isActive());
+        category = categoryRepository.save(category);
+        eventPublisher.publishEvent(new CategoryChangedEvent());
+        List<Long> modifiedPostIds = postQueryService.getPostIdsByCategoryId(categoryId);
+        if (!modifiedPostIds.isEmpty()) {
+            Set<Long> stalePostIds = Set.copyOf(modifiedPostIds);
+            eventPublisher.publishEvent(new PostListChangedEvent(stalePostIds));
+        }
+        return CategoryAdminDetailDTO.from(category);
     }
 
-    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
-    public CategoryDetailDTO putCategory(Long categoryId, ReplaceCategoryRequestDTO request) {
+    public CategoryAdminDetailDTO putCategory(Long categoryId, ReplaceCategoryRequestDTO request) {
         Category category = categoryRepository.findById(categoryId)
                 .orElse(null);
         if (category == null) {
             category = new Category();
         }
-        modifyCategoryIfChanged(category, request.name(), request.description());
-        return CategoryDetailDTO.from(categoryRepository.save(category));
+        modifyCategoryIfChanged(category, request.name(), request.description(), request.isActive());
+        category = categoryRepository.save(category);
+        eventPublisher.publishEvent(new CategoryChangedEvent());
+        List<Long> modifiedPostIds = postQueryService.getPostIdsByCategoryId(categoryId);
+        if (!modifiedPostIds.isEmpty()) {
+            Set<Long> stalePostIds = Set.copyOf(modifiedPostIds);
+            eventPublisher.publishEvent(new PostListChangedEvent(stalePostIds));
+        }
+        return CategoryAdminDetailDTO.from(category);
     }
 
     @CacheEvict(value = "categories", allEntries = true)
     @Transactional
     public void deleteCategory(Long categoryId) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new CategoryNotFoundException(categoryId));
-        if (postRepository.existsActiveByCategoryId(categoryId)) {
+                .orElseThrow(() -> new CategoryByIdNotFoundException(categoryId));
+        if (postQueryService.existsActiveByCategoryId(categoryId)) {
             throw new ConflictStatusException("Category is used by active posts");
         }
-        categoryRepository.delete(category);
+        categoryRepository.save(category);
+        eventPublisher.publishEvent(new CategoryChangedEvent());
+        List<Long> modifiedPostIds = postQueryService.getPostIdsByCategoryId(categoryId);
+        if (!modifiedPostIds.isEmpty()) {
+            Set<Long> stalePostIds = Set.copyOf(modifiedPostIds);
+            eventPublisher.publishEvent(new PostListChangedEvent(stalePostIds));
+        }
     }
 
-    private void modifyCategoryIfChanged(Category category, String newName, String newDescription) {
+    private void modifyCategoryIfChanged(Category category, String newName, String newDescription, Boolean newIsActive) {
         if (category.getName() == null || (!newName.isBlank() && !category.getName().equals(newName))) {
             category.setName(newName);
             category.setSlugName(SlugifyUtils.slugify(newName));
@@ -75,6 +103,9 @@ public class CategoryCommandService {
             else {
                 category.setDescription(newDescription);
             }
+        }
+        if (newIsActive != null && !category.getIsActive().equals(newIsActive)) {
+            category.setIsActive(newIsActive);
         }
     }
 }

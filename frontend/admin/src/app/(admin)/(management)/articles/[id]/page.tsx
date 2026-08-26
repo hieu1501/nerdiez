@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { articlesService, Article } from "@/services/articles";
+import { articlesService, AdminPostDetailDTO } from "@/services/articles";
 import { ApiError } from "@/services/api";
 import { useToast } from "@/components/ui/toast/useToast";
 import ToastContainer from "@/components/ui/toast/Toast";
@@ -27,19 +27,20 @@ export default function ArticleDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = Number(params.id);
-  const [article, setArticle] = useState<Article | null>(null);
+  const [article, setArticle] = useState<AdminPostDetailDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const showError = toast.error;
 
   useEffect(() => {
     articlesService
       .getById(id)
       .then(setArticle)
       .catch((e) => {
-        toast.error(e instanceof ApiError ? e.message : "Failed to load article.");
+        showError(e instanceof ApiError ? e.message : "Failed to load article.");
       })
       .finally(() => setLoading(false));
-  }, [id, toast]);
+  }, [id, showError]);
 
   if (loading) {
     return (
@@ -60,6 +61,8 @@ export default function ArticleDetailPage() {
     );
   }
 
+  const { content, voteStats } = article;
+
   return (
     <div className="w-full px-4 2xl:px-8">
       <ToastContainer toasts={toast.toasts} onRemove={toast.remove} />
@@ -71,54 +74,54 @@ export default function ArticleDetailPage() {
           <Button variant="outline" onClick={() => router.push("/articles")}>
             Back
           </Button>
-          <Button variant="primary" onClick={() => router.push(`/articles/${article.id}/edit`)}>
+          <Button variant="primary" onClick={() => router.push(`/articles/${content.id}/edit`)}>
             Edit
           </Button>
         </div>
       </div>
 
       <div className="space-y-6">
-        {article.featuredImage && (
+        {content.featuredImage && (
           <div className="flex items-start gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-white/[0.05] dark:bg-white/[0.03]">
             <div className="w-48 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
               <img
-                src={article.featuredImage}
+                src={content.featuredImage}
                 alt="Cover"
                 className="w-full aspect-video object-cover"
               />
             </div>
             <div className="min-w-0 pt-1 text-xs text-gray-500 dark:text-gray-400">
               <p className="font-medium text-gray-700 dark:text-white/90">Featured Image</p>
-              <p className="truncate">{article.featuredImage}</p>
+              <p className="truncate">{content.featuredImage}</p>
             </div>
           </div>
         )}
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-white/[0.05] dark:bg-white/[0.03]">
           <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
-            {article.title}
+            {content.title}
           </h1>
 
-          {article.description && (
-            <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">{article.description}</p>
+          {content.description && (
+            <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">{content.description}</p>
           )}
 
           <div className="mb-6 flex flex-wrap gap-x-8 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
-            <span>Author: <strong className="text-gray-700 dark:text-white/90">{article.authorUsername}</strong></span>
-            <span>Category: <strong className="text-gray-700 dark:text-white/90">{article.category?.name || "—"}</strong></span>
-            <span>Status: <Badge size="sm" color={article.isActive ? "success" : "warning"}>{article.isActive ? "Published" : "Inactive"}</Badge></span>
-            <span>Created: <strong className="text-gray-700 dark:text-white/90">{new Date(article.createdAt).toLocaleString()}</strong></span>
-            <span>Updated: <strong className="text-gray-700 dark:text-white/90">{new Date(article.updatedAt).toLocaleString()}</strong></span>
+            <span>Author: <strong className="text-gray-700 dark:text-white/90">{content.author.username}</strong></span>
+            <span>Category: <strong className="text-gray-700 dark:text-white/90">{content.category?.name || "—"}</strong></span>
+            <span>Status: <Badge size="sm" color={content.isActive ? "success" : "warning"}>{content.isActive ? "Published" : "Inactive"}</Badge></span>
+            <span>Created: <strong className="text-gray-700 dark:text-white/90">{new Date(content.createdAt).toLocaleString()}</strong></span>
+            <span>Updated: <strong className="text-gray-700 dark:text-white/90">{new Date(content.updatedAt).toLocaleString()}</strong></span>
           </div>
 
-          {article.topics && article.topics.length > 0 && (
+          {content.topics.length > 0 && (
             <div className="mb-6 flex flex-wrap gap-2">
-              {article.topics.map((t) => (
+              {content.topics.map((topic) => (
                 <span
-                  key={t.topicId}
+                  key={topic.topicId}
                   className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-white/90"
                 >
-                  {t.name}
+                  {topic.name}
                 </span>
               ))}
             </div>
@@ -127,15 +130,15 @@ export default function ArticleDetailPage() {
           <div className="mb-6 flex gap-6 text-sm">
             <span className="flex items-center gap-1 text-green-600">
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15a.75.75 0 01-.75-.75V7.612L7.22 9.64a.75.75 0 01-1.06-1.06l3.5-3.5a.75.75 0 011.06 0l3.5 3.5a.75.75 0 01-1.06 1.06l-2.03-2.028v6.638c0 .414-.336.75-.75.75z"/></svg>
-              {article.upvoteCount}
+              {voteStats.upvoteCount}
             </span>
             <span className="flex items-center gap-1 text-red-600">
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 5a.75.75 0 01.75.75v6.638l2.03-2.028a.75.75 0 011.06 1.06l-3.5 3.5a.75.75 0 01-1.06 0l-3.5-3.5a.75.75 0 011.06-1.06l2.03 2.028V5.75A.75.75 0 0110 5z"/></svg>
-              {article.downvoteCount}
+              {voteStats.downvoteCount}
             </span>
           </div>
 
-          {article.content && (
+          {content.content && (
             <div className="flex gap-8">
               <div className="w-[85%] min-w-0">
                 <div className="prose max-w-none dark:prose-invert break-words">
@@ -143,12 +146,12 @@ export default function ArticleDetailPage() {
                     remarkPlugins={[remarkGfm, remarkBreaks]}
                     rehypePlugins={[rehypeRaw, rehypePrism, rehypeFigure, rehypeSlug]}
                   >
-                    {stripHtmlWrapper(article.content)}
+                    {stripHtmlWrapper(content.content)}
                   </ReactMarkdown>
                 </div>
               </div>
               <aside className="hidden xl:block flex-1 min-w-0">
-                <TableOfContents content={stripHtmlWrapper(article.content)} />
+                <TableOfContents content={stripHtmlWrapper(content.content)} />
               </aside>
             </div>
           )}

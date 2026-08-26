@@ -1,25 +1,27 @@
 package com.tmb.csnerd.demo.domain.services.post;
 
+import com.tmb.csnerd.demo.Application;
+import com.tmb.csnerd.demo.domain.cache.post.PostChangedEvent;
 import com.tmb.csnerd.demo.domain.models.*;
 import com.tmb.csnerd.demo.domain.services.category.CategoryQueryService;
 import com.tmb.csnerd.demo.domain.services.image.ImageService;
 import com.tmb.csnerd.demo.domain.services.topic.TopicQueryService;
-import com.tmb.csnerd.demo.dto.post.*;
+import com.tmb.csnerd.demo.dto.post.PostVoteStatsDTO;
+import com.tmb.csnerd.demo.dto.post.adminresponse.AdminPostDetailContentDTO;
+import com.tmb.csnerd.demo.dto.post.adminresponse.AdminPostDetailDTO;
+import com.tmb.csnerd.demo.dto.post.request.CreatePostRequestDTO;
+import com.tmb.csnerd.demo.dto.post.request.PatchPostRequestDTO;
+import com.tmb.csnerd.demo.dto.post.request.PutPostRequestDTO;
 import com.tmb.csnerd.demo.exceptions.UnauthorizedException;
-import com.tmb.csnerd.demo.exceptions.post.PostNotFoundException;
-import com.tmb.csnerd.demo.domain.repositories.PostRepository;
+import com.tmb.csnerd.demo.exceptions.post.PostByIdNotFoundException;
+import com.tmb.csnerd.demo.domain.repositories.post.PostRepository;
 import com.tmb.csnerd.demo.domain.security.UserPrincipal;
 import com.tmb.csnerd.demo.utils.MarkdownUtils;
 import com.tmb.csnerd.demo.utils.MediaUtils;
 import com.tmb.csnerd.demo.utils.SlugifyUtils;
 import jakarta.transaction.Transactional;
-import org.commonmark.node.AbstractVisitor;
-import org.commonmark.node.Image;
-import org.commonmark.node.Link;
-import org.commonmark.node.Node;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -29,30 +31,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@RequiredArgsConstructor
 @Service
-public class PostCommandService extends PostBaseService {
+public class PostCommandService {
     private final PostRepository postRepository;
     private final CategoryQueryService categoryQueryService;
     private final TopicQueryService topicQueryService;
     private final ImageService imageService;
+    private final MarkdownUtils markdownUtils;
+    private final MediaUtils mediaUtils;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public PostCommandService(PostRepository postRepository,
-                              CategoryQueryService categoryQueryService,
-                              TopicQueryService topicQueryService,
-                              MarkdownUtils markdownUtils,
-                              ImageService imageService,
-                              MediaUtils mediaUtils) {
-        super(mediaUtils, markdownUtils);
-        this.postRepository = postRepository;
-        this.categoryQueryService = categoryQueryService;
-        this.topicQueryService = topicQueryService;
-        this.imageService = imageService;
-    }
-
-    @Caching(evict = {
-        @CacheEvict(cacheNames = "post-admin-list", allEntries = true),
-        @CacheEvict(cacheNames = "post-public-list", allEntries = true),
-    })
     @Transactional
     public AdminPostDetailDTO createPostForAdmin(CreatePostRequestDTO request, UserPrincipal author) {
         if (author == null) {
@@ -62,7 +51,7 @@ public class PostCommandService extends PostBaseService {
         // Sanitizing request
         List<String> imagePaths = new ArrayList<>();
         String title = request.title();
-        String content = normalizeMarkdownAndExtractImageUrls(request.content(), imagePaths);
+        String content = markdownUtils.normalizeMarkdownAndExtractImageUrls(request.content(), imagePaths);
         String description = request.description();
         String featuredImage = mediaUtils.isAllowedMediaUrl(request.featuredImage()) ? request.featuredImage() : null;
         String featuredImageUrl = null;
@@ -83,10 +72,10 @@ public class PostCommandService extends PostBaseService {
         updateTopicsForPost(post, topicIds);
         PostMetadata postMetadata = new PostMetadata();
         if (featuredImageUrl != null) {
-            postMetadata.setFeaturedImage(featuredImageUrl);
+            post.setFeaturedImage(featuredImageUrl);
         }
         if (description!= null) {
-            postMetadata.setDescription(description);
+            post.setDescription(description);
         }
         post.setPostMetadata(postMetadata);
         postMetadata.setPost(post);
@@ -100,26 +89,20 @@ public class PostCommandService extends PostBaseService {
         return convertToAdminPostDetailDTO(post);
     }
 
-    @Caching(evict = {
-        @CacheEvict(cacheNames = "post-admin-list", allEntries = true),
-        @CacheEvict(cacheNames = "post-public-list", allEntries = true),
-        @CacheEvict(cacheNames = "post-detail", key = "'admin:detail:' + #postId"),
-        @CacheEvict(cacheNames = "post-detail", key = "'public:detail:' + #postId")
-    })
     @Transactional
     public AdminPostDetailDTO patchPostForAdmin(Long postId, PatchPostRequestDTO request, UserPrincipal author) {
         if (author == null) {
             throw new UnauthorizedException(HttpStatus.UNAUTHORIZED);
         }
         Post post = postRepository.findById(postId).
-                orElseThrow(() -> new PostNotFoundException(postId));
+                orElseThrow(() -> new PostByIdNotFoundException(postId));
         if (!post.getAuthor().getId().equals(author.getUser().getId())) {
             throw new UnauthorizedException(HttpStatus.FORBIDDEN);
         }
         // Sanitizing request
         List<String> imagePaths = new ArrayList<>();
         String title = request.title();
-        String content = normalizeMarkdownAndExtractImageUrls(request.content(), imagePaths);
+        String content = markdownUtils.normalizeMarkdownAndExtractImageUrls(request.content(), imagePaths);
         String description = request.description();
         String featuredImage = mediaUtils.isAllowedMediaUrl(request.featuredImage()) ? request.featuredImage() : null;
         String featuredImageUrl = null;
@@ -134,11 +117,11 @@ public class PostCommandService extends PostBaseService {
         if (checkPostAttributeCanBeChanged(content, post.getContent())) {
             post.setContent(content);
         }
-        if (checkPostAttributeCanBeChanged(featuredImageUrl, post.getPostMetadata().getFeaturedImage())) {
-            post.getPostMetadata().setFeaturedImage(featuredImageUrl);
+        if (checkPostAttributeCanBeChanged(featuredImageUrl, post.getFeaturedImage())) {
+            post.setFeaturedImage(featuredImageUrl);
         }
-        if (checkPostAttributeCanBeChanged(description, post.getPostMetadata().getDescription())) {
-            post.getPostMetadata().setDescription(description);
+        if (checkPostAttributeCanBeChanged(description, post.getDescription())) {
+            post.setDescription(description);
         }
         if (checkPostAttributeCanBeChanged(request.categoryId(), post.getCategory().getId())) {
             Category category = categoryQueryService.getCategoryById(request.categoryId());
@@ -154,15 +137,12 @@ public class PostCommandService extends PostBaseService {
             imagePaths.add(featuredImageUrl);
         }
         imageService.updateImagesLinkedToPost(imagePaths, post);
-        return convertToAdminPostDetailDTO(postRepository.save(post));
+
+        Post updatedPost = postRepository.save(post);
+        eventPublisher.publishEvent(new PostChangedEvent(updatedPost.getId()));
+        return convertToAdminPostDetailDTO(updatedPost);
     }
 
-    @Caching(evict = {
-        @CacheEvict(cacheNames = "post-admin-list", allEntries = true),
-        @CacheEvict(cacheNames = "post-public-list", allEntries = true),
-        @CacheEvict(cacheNames = "post-detail", key = "'admin:detail:' + #postId"),
-        @CacheEvict(cacheNames = "post-detail", key = "'public:detail:' + #postId")
-    })
     @Transactional
     public AdminPostDetailDTO putPostForAdmin(Long postId, PutPostRequestDTO request, UserPrincipal author) {
         if (author == null) {
@@ -188,7 +168,7 @@ public class PostCommandService extends PostBaseService {
         // Sanitizing request
         List<String> imagePaths = new ArrayList<>();
         String title = request.title();
-        String content = normalizeMarkdownAndExtractImageUrls(request.content(), imagePaths);
+        String content = markdownUtils.normalizeMarkdownAndExtractImageUrls(request.content(), imagePaths);
         String description = request.description();
         String featuredImage = mediaUtils.isAllowedMediaUrl(request.featuredImage()) ? request.featuredImage() : null;
         String featuredImageUrl = null;
@@ -202,8 +182,8 @@ public class PostCommandService extends PostBaseService {
         post.setUpdatedAt(Instant.now());
         post.setCategory(category);
         post.setIsActive(request.isActive() != null && request.isActive());
-        post.getPostMetadata().setFeaturedImage(featuredImageUrl);
-        post.getPostMetadata().setDescription(description);
+        post.setFeaturedImage(featuredImageUrl);
+        post.setDescription(description);
         Set<Long> topicIds = request.topicIds() == null ? Set.of() : request.topicIds();
         updateTopicsForPost(post, topicIds);
         // Update images linked to post
@@ -216,27 +196,25 @@ public class PostCommandService extends PostBaseService {
         else {
             imageService.setImagesLinkedToPost(imagePaths, post);
         }
-        return convertToAdminPostDetailDTO(postRepository.save(post));
+
+        Post updatedPost = postRepository.save(post);
+        eventPublisher.publishEvent(new PostChangedEvent(updatedPost.getId()));
+        return convertToAdminPostDetailDTO(updatedPost);
     }
 
-    @Caching(evict = {
-        @CacheEvict(cacheNames = "post-admin-list", allEntries = true),
-        @CacheEvict(cacheNames = "post-public-list", allEntries = true),
-        @CacheEvict(cacheNames = "post-detail", key = "'admin:detail:' + #postId"),
-        @CacheEvict(cacheNames = "post-detail", key = "'public:detail:' + #postId")
-    })
     @Transactional
     public void deactivatePostForAdmin(Long postId, UserPrincipal author) {
         if (author == null) {
             throw new UnauthorizedException(HttpStatus.UNAUTHORIZED);
         }
         Post post = postRepository.findById(postId).
-                orElseThrow(() -> new PostNotFoundException(postId));
+                orElseThrow(() -> new PostByIdNotFoundException(postId));
         if (!post.getAuthor().getId().equals(author.getUser().getId())) {
             throw new UnauthorizedException(HttpStatus.FORBIDDEN);
         }
         post.setIsActive(false);
-        postRepository.save(post);
+        Post updatedPost = postRepository.save(post);
+        eventPublisher.publishEvent(new PostChangedEvent(updatedPost.getId()));
     }
 
     private boolean checkPostAttributeCanBeChanged(String newValue, String oldValue)
@@ -278,32 +256,14 @@ public class PostCommandService extends PostBaseService {
         }
     }
 
-    private String normalizeMarkdownAndExtractImageUrls(String content, List<String> imagePaths) {
-        Node document = markdownUtils.parseDocument(content);
-        List<String> errors = new ArrayList<>();
-
-        document.accept(new AbstractVisitor() {
-            @Override
-            public void visit(Link link) {
-                String url = markdownUtils.normalizeUrl(link.getDestination(), "link", errors);
-                if (!errors.isEmpty()) {
-                    throw new IllegalArgumentException(String.join("; ", errors));
-                }
-                link.setDestination(url);
-                super.visit(link);
-            }
-
-            @Override
-            public void visit(Image image) {
-                String url = markdownUtils.normalizeUrl(image.getDestination(), "image", errors);
-                if (!errors.isEmpty()) {
-                    throw new IllegalArgumentException(String.join("; ", errors));
-                }
-                imagePaths.add(url.split("[?#]")[0]); // Don't store queries and fragments to database
-                image.setDestination(url);
-                super.visit(image);
-            }
-        });
-        return markdownUtils.renderDocument(document);
+    private AdminPostDetailDTO convertToAdminPostDetailDTO(Post post) {
+        String denormalizedContent = markdownUtils.denormalizeImageUrlsInContent(post.getContent());
+        String denormalizedFeaturedImageUrl = mediaUtils.buildMediaUrl(post.getFeaturedImage());
+        AdminPostDetailContentDTO content = AdminPostDetailContentDTO.from(post, denormalizedContent, denormalizedFeaturedImageUrl);
+        PostMetadata postMetadata = post.getPostMetadata();
+        Long upvoteCount = postMetadata.getUpvoteCount() != null ? postMetadata.getUpvoteCount() : 0;
+        Long downvoteCount = postMetadata.getDownvoteCount() != null ? postMetadata.getDownvoteCount() : 0;
+        PostVoteStatsDTO voteStats = PostVoteStatsDTO.from(upvoteCount, downvoteCount, null);
+        return AdminPostDetailDTO.from(content, voteStats);
     }
 }

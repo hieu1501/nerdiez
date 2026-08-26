@@ -20,7 +20,8 @@ CREATE TABLE `nerdy`.`categories` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `slug_name` varchar(255) UNIQUE NOT NULL,
   `name` varchar(255) NOT NULL,
-  `description` varchar(512) NULL
+  `description` varchar(512) NULL,
+  `is_active` bool DEFAULT false
 );
 
 CREATE TABLE `nerdy`.`posts` (
@@ -28,24 +29,28 @@ CREATE TABLE `nerdy`.`posts` (
   `title` varchar(255) NOT NULL,
   `slug` varchar(255) UNIQUE NOT NULL,
   `content` text,
+  `description` varchar(255),
+  `featured_image` varchar(255),
   `author_id` bigint NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `category_id` bigint,
-  `is_active` bool DEFAULT true
+  `is_active` bool DEFAULT false
 );
 
 CREATE TABLE `nerdy`.`posts_metadata` (
   `post_id` bigint PRIMARY KEY,
-  `description` varchar(255),
-  `featured_image` varchar(255)
+  `upvote_count` bigint NOT NULL DEFAULT 0,
+  `downvote_count` bigint NOT NULL DEFAULT 0,
+  `vote_version` bigint NOT NULL DEFAULT 1,
+  CONSTRAINT check_upvote_non_negative CHECK (upvote_count >= 0),
+  CONSTRAINT check_downvote_non_negative CHECK (downvote_count >= 0)
 );
 
 CREATE TABLE `nerdy`.`posts_vote` (
   `post_id` bigint,
   `user_id` bigint,
   `vote` tinyint DEFAULT 0,
-  `is_active` bool DEFAULT false,
   PRIMARY KEY (`post_id`, `user_id`)
 );
 
@@ -54,6 +59,7 @@ CREATE TABLE `nerdy`.`topics` (
   `slug_name` varchar(255) UNIQUE NOT NULL,
   `name` varchar(255) NOT NULL,
   `description` varchar(512) NULL,
+  `is_active` bool DEFAULT false,
   `category_id` bigint
 );
 

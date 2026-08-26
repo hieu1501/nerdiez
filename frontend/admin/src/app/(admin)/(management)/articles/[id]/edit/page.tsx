@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { articlesService, Article } from "@/services/articles";
+import { articlesService, AdminPostDetailContentDTO } from "@/services/articles";
 import { categoriesService, Category } from "@/services/categories";
 import { topicsService, Topic } from "@/services/topics";
 import { uploadFile } from "@/services/upload";
@@ -23,7 +23,7 @@ export default function EditArticlePage() {
   const params = useParams();
   const id = Number(params.id);
 
-  const [article, setArticle] = useState<Article | null>(null);
+  const [article, setArticle] = useState<AdminPostDetailContentDTO | null>(null);
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState<number>(0);
   const [content, setContent] = useState("");
@@ -38,6 +38,8 @@ export default function EditArticlePage() {
   const [coverPreviewUrl, setCoverPreviewUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const toast = useToast();
+  const showError = toast.error;
+  const showWarning = toast.warning;
   const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; status: string }>({ show: false, status: "" });
 
   useEffect(() => {
@@ -46,22 +48,49 @@ export default function EditArticlePage() {
       categoriesService.getAll(),
       topicsService.getAll(),
     ])
-      .then(([art, cats, tops]) => {
+      .then(([response, cats, tops]) => {
+        const art = response.content;
         setArticle(art);
         setTitle(art.title);
-        setCategoryId(art.category?.categoryId ?? 0);
+        setCategoryId(art.category.categoryId);
         setContent(art.content || "");
         setDescription(art.description || "");
         setFeaturedImage(art.featuredImage ?? "");
         setCategories(cats);
         setTopics(tops);
-        setSelectedTopicIds(art.topics?.map(topic => topic.topicId) ?? []);
+        const categoryTopicIds = new Set(
+          tops
+            .filter((topic) => topic.category.categoryId === art.category.categoryId)
+            .map((topic) => topic.topicId),
+        );
+        const articleTopicIds = art.topics.map((topic) => topic.topicId);
+        const validTopicIds = articleTopicIds.filter((topicId) => categoryTopicIds.has(topicId));
+        setSelectedTopicIds(validTopicIds);
+        if (validTopicIds.length !== articleTopicIds.length) {
+          showWarning("Some topics were removed because they do not belong to the article category.");
+        }
       })
       .catch((e) => {
-        toast.error(e instanceof ApiError ? e.message : "Failed to load article.");
+        showError(e instanceof ApiError ? e.message : "Failed to load article.");
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, showError, showWarning]);
+
+  const availableTopics = useMemo(
+    () => topics.filter((topic) => topic.category.categoryId === categoryId),
+    [categoryId, topics],
+  );
+
+  const handleCategoryChange = (value: string) => {
+    const nextCategoryId = Number(value);
+    if (nextCategoryId === categoryId) return;
+
+    if (selectedTopicIds.length > 0) {
+      toast.info("Selected topics were cleared because the category changed.");
+    }
+    setCategoryId(nextCategoryId);
+    setSelectedTopicIds([]);
+  };
 
   const handleImageChange = async (file: File | null) => {
     if (!file) {
@@ -98,6 +127,11 @@ export default function EditArticlePage() {
       toast.error("Title, category, and at least one topic are required.");
       return;
     }
+    const availableTopicIds = new Set(availableTopics.map((topic) => topic.topicId));
+    if (selectedTopicIds.some((topicId) => !availableTopicIds.has(topicId))) {
+      toast.error("Every selected topic must belong to the selected category.");
+      return;
+    }
     if (featuredImage && !isAllowedImageUrl(featuredImage)) {
       toast.error("Cover image URL is not valid. Please re-upload.");
       return;
@@ -105,12 +139,12 @@ export default function EditArticlePage() {
     if (article) {
       const changed =
         title !== article.title ||
-        categoryId !== (article.category?.categoryId ?? 0) ||
+        categoryId !== article.category.categoryId ||
         content !== (article.content || "") ||
         description !== (article.description || "") ||
         featuredImage !== (article.featuredImage ?? "") ||
-        selectedTopicIds.length !== (article.topics?.length ?? 0) ||
-        selectedTopicIds.some((id, i) => id !== (article.topics?.[i]?.topicId ?? -1)) ||
+        selectedTopicIds.length !== article.topics.length ||
+        selectedTopicIds.some((topicId, index) => topicId !== article.topics[index]?.topicId) ||
         (status === "Published") !== article.isActive;
       if (!changed) {
         router.push("/articles");
@@ -231,19 +265,28 @@ export default function EditArticlePage() {
             }))}
             placeholder="Select category"
             defaultValue={categoryId ? String(categoryId) : ""}
-            onChange={(value) => setCategoryId(Number(value))}
+            onChange={handleCategoryChange}
           />
         </div>
         <div className="w-60">
           <MultiSelect
             label="Topics"
-            options={topics.map((t) => ({
+            options={availableTopics.map((t) => ({
               value: String(t.topicId),
               text: t.name,
               selected: selectedTopicIds.includes(t.topicId),
             }))}
-            defaultSelected={selectedTopicIds.map(String)}
+            value={selectedTopicIds.map(String)}
             onChange={(selected) => setSelectedTopicIds(selected.map(Number))}
+            disabled={!categoryId}
+            placeholder={
+              !categoryId
+                ? "Select a category first"
+                : availableTopics.length === 0
+                  ? "No topics available"
+                  : "Select topics..."
+            }
+            emptyMessage="No topics available for this category"
           />
         </div>
         <div className="w-44">

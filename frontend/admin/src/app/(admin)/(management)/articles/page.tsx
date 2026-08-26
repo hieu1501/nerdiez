@@ -70,6 +70,7 @@ export default function ArticlesPage() {
   const [data, setData] = useState<ArticlePage | null>(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const showError = toast.error;
 
   const fetchArticles = useCallback(() => {
     return articlesService
@@ -83,12 +84,12 @@ export default function ArticlesPage() {
       })
       .catch((e) => {
         const msg = e instanceof ApiError ? e.message : "Cannot connect to server. Please ensure the API is running.";
-        toast.error(`Failed to load articles: ${msg}`);
+        showError(`Failed to load articles: ${msg}`);
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [page, sortField, sortDir, toast]);
+  }, [page, sortField, sortDir, showError]);
 
   useEffect(() => {
     fetchArticles();
@@ -147,20 +148,20 @@ export default function ArticlesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {data.items.map((article) => (
+                {data.items.map(({ content: article, voteStats }) => (
                   <TableRow key={article.id}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">{article.title}</span>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.authorUsername}</TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.category ? article.category.name : "—"}</TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.author.username}</TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.category?.name || "—"}</TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.createdAt ? new Date(article.createdAt).toLocaleDateString() : "—"}</TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{article.updatedAt ? new Date(article.updatedAt).toLocaleDateString() : "—"}</TableCell>
                     <TableCell className="px-4 py-3 text-start text-theme-sm">
-                      <span className="text-green-600 dark:text-green-400 font-medium">{article.upvoteCount ?? 0}</span>
+                      <span className="text-green-600 dark:text-green-400 font-medium">{voteStats.upvoteCount ?? 0}</span>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-start text-theme-sm">
-                      <span className="text-red-500 dark:text-red-400 font-medium">{article.downvoteCount ?? 0}</span>
+                      <span className="text-red-500 dark:text-red-400 font-medium">{voteStats.downvoteCount ?? 0}</span>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-start">
                       <Badge size="sm" color={article.isActive ? "success" : "warning"}>{article.isActive ? "Published" : "Inactive"}</Badge>

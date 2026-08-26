@@ -1,6 +1,8 @@
 const API_BASE = "/api";
 const ADMIN_API_BASE = "/admin/api";
 const CACHE_TTL = 30000;
+const MAX_CACHE_ENTRIES = 50;
+const SERVER_ERROR_COOLDOWN = 5000;
 
 class ApiError extends Error {
   status: number;
@@ -14,6 +16,7 @@ class ApiError extends Error {
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
 const inFlight = new Map<string, Promise<unknown>>();
+const failedGets = new Map<string, { error: ApiError; timestamp: number }>();
 
 function cacheKey(endpoint: string, admin: boolean): string {
   return admin ? `${ADMIN_API_BASE}${endpoint}` : `${API_BASE}${endpoint}`;
@@ -22,7 +25,18 @@ function cacheKey(endpoint: string, admin: boolean): string {
 function getCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   const entry = cache.get(key);
   if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
+    // touch: mark as most recently used (LRU)
+    cache.delete(key);
+    cache.set(key, entry);
     return Promise.resolve(entry.data as T);
+  }
+
+  const failed = failedGets.get(key);
+  if (failed) {
+    if (Date.now() - failed.timestamp < SERVER_ERROR_COOLDOWN) {
+      return Promise.reject(failed.error);
+    }
+    failedGets.delete(key);
   }
 
   const pending = inFlight.get(key);
@@ -30,11 +44,27 @@ function getCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
 
   const promise = fetcher()
     .then((data) => {
+      cache.delete(key);
       cache.set(key, { data, timestamp: Date.now() });
+      while (cache.size > MAX_CACHE_ENTRIES) {
+        const oldest = cache.keys().next().value;
+        if (oldest === undefined) break;
+        cache.delete(oldest);
+      }
+      failedGets.delete(key);
       inFlight.delete(key);
       return data;
     })
     .catch((err) => {
+      if (err instanceof ApiError && err.status >= 500) {
+        failedGets.delete(key);
+        failedGets.set(key, { error: err, timestamp: Date.now() });
+        while (failedGets.size > MAX_CACHE_ENTRIES) {
+          const oldest = failedGets.keys().next().value;
+          if (oldest === undefined) break;
+          failedGets.delete(oldest);
+        }
+      }
       inFlight.delete(key);
       throw err;
     });
@@ -46,14 +76,29 @@ function getCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
 function invalidateCache(endpoint?: string) {
   if (!endpoint) {
     cache.clear();
+    failedGets.clear();
     return;
   }
   for (const key of cache.keys()) {
     if (key.includes(endpoint)) cache.delete(key);
   }
+  for (const key of failedGets.keys()) {
+    if (key.includes(endpoint)) failedGets.delete(key);
+  }
 }
 
 let refreshPromise: Promise<boolean> | null = null;
+
+async function parseResponse<T>(response: Response): Promise<T> {
+  if (response.status === 204 || response.status === 205) {
+    return undefined as T;
+  }
+
+  const body = await response.text();
+  if (!body.trim()) return undefined as T;
+
+  return JSON.parse(body) as T;
+}
 
 async function refreshAuth(): Promise<boolean> {
   if (refreshPromise) return refreshPromise;
@@ -118,8 +163,7 @@ async function request<T>(
         throw new ApiError(message, retryRes.status);
       }
 
-      if (retryRes.status === 204) return undefined as T;
-      return retryRes.json();
+      return parseResponse<T>(retryRes);
     }
 
     throw new ApiError("Session expired", 401);
@@ -136,9 +180,7 @@ async function request<T>(
     throw new ApiError(message, res.status);
   }
 
-  if (res.status === 204) return undefined as T;
-
-  return res.json();
+  return parseResponse<T>(res);
 }
 
 async function requestFormData<T>(
@@ -187,8 +229,7 @@ async function requestFormData<T>(
     throw new ApiError(message, res.status);
   }
 
-  if (res.status === 204) return undefined as T;
-  return res.json();
+  return parseResponse<T>(res);
 }
 
 function collectionPath(endpoint: string): string {

@@ -16,9 +16,6 @@ public class PostsVote {
     @Column(name = "vote")
     private Byte vote;
 
-    @Column(name = "is_active")
-    private Boolean isActive;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", insertable = false, updatable = false)
     private Post post;

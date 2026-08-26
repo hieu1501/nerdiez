@@ -35,6 +35,12 @@ public class Post {
     @Column(name = "content")
     private String content;
 
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "featured_image")
+    private String featuredImage;
+
     @CreatedDate
     @Column(name = "created_at")
     private Instant createdAt;
@@ -63,7 +69,7 @@ public class Post {
     private PostMetadata postMetadata;
 
     @Column(name = "is_active")
-    private Boolean isActive;
+    private Boolean isActive = false;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PostsVote> votes;
@@ -82,19 +88,5 @@ public class Post {
     public void removeTopic(Topic topic) {
         if (topics !=  null) topics.remove(topic);
         topic.removePost(this);
-    }
-
-    public Pair<Long, Long> getVoteCount() {
-        Long upvotes = 0L;
-        Long downvotes = 0L;
-        if (votes != null) {
-            for (PostsVote vote : votes) {
-                if (vote.getIsActive() && vote.getVote() != 0) {
-                    if (vote.getVote() == 1) upvotes++;
-                    if (vote.getVote() == -1) downvotes++;
-                }
-            }
-        }
-        return Pair.of(upvotes, downvotes);
     }
 }

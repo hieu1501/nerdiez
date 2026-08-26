@@ -52,6 +52,7 @@ public class SecurityConfig {
                     auth.requestMatchers("/api/auth/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/media/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll();
                     auth.requestMatchers("/admin/api/**").hasAuthority("SCOPE_ADMIN");
                     auth.anyRequest().authenticated();
                 })

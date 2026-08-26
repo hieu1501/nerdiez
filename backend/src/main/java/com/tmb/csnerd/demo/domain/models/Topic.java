@@ -27,6 +27,9 @@ public class Topic {
     @Column(name = "description", length = 512)
     private String description;
 
+    @Column(name = "is_active")
+    private Boolean isActive = false;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id")
     private Category category;

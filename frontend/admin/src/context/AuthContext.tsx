@@ -5,10 +5,9 @@ import {
   useContext,
   useState,
   ReactNode,
-  useCallback,
   useEffect,
 } from "react";
-import { api } from "@/services/api";
+import { api, ApiError } from "@/services/api";
 
 interface User {
   email: string;
@@ -52,29 +51,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = user !== null;
   const needsUsername = user !== null && !user.username;
 
-  const checkAuth = useCallback(async () => {
-    const stored = loadStoredUser();
-    try {
-      const user = await api.get<User>("/profile/me", false);
-      storeUser(user);
-      setUser(user);
-    } catch {
-      storeUser(null);
-      setUser(null);
-      if (
-        typeof window !== "undefined" &&
-        !window.location.pathname.startsWith("/signin")
-      ) {
-        window.location.href = "/signin";
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    let isActive = true;
+    const stored = loadStoredUser();
+    void api
+      .get<User>("/profile/me", false)
+      .then((authenticatedUser) => {
+        if (!isActive) return;
+        storeUser(authenticatedUser);
+        setUser(authenticatedUser);
+      })
+      .catch((error: unknown) => {
+        if (!isActive) return;
+        if (error instanceof ApiError && error.status === 401) {
+          storeUser(null);
+          setUser(null);
+          if (
+            typeof window !== "undefined" &&
+            !window.location.pathname.startsWith("/signin")
+          ) {
+            window.location.href = "/signin";
+          }
+        } else {
+          setUser(stored);
+        }
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const signOut = async () => {
     try {

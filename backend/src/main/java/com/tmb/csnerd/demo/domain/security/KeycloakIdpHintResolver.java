@@ -40,7 +40,7 @@ public class KeycloakIdpHintResolver implements OAuth2AuthorizationRequestResolv
 
         String redirectUri = request.getParameter("redirect_uri");
         if (redirectUri != null) {
-            // Encode our custom data into the state param, alongside Spring's own CSRF value
+            // Encode custom data into the state param, alongside Spring's own CSRF value
             String customState = req.getState() + "|" + Base64.getUrlEncoder()
                     .encodeToString(redirectUri.getBytes(StandardCharsets.UTF_8));
             builder.state(customState);
