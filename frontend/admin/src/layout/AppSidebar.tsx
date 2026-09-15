@@ -29,10 +29,11 @@ type NavItem = {
 const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
-    name: "Articles Management",
+    name: "Content Management",
     subItems: [
       { name: "Articles", path: "/articles"},
       { name: "Categories", path: "/categories"},
+      { name: "Tags", path: "/tags"},
       { name: "Topics", path: "/topics"}
     ],
   },
@@ -232,7 +233,7 @@ const AppSidebar: React.FC = () => {
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // const isActive = (path: string) => path === pathname;
-   const isActive = useCallback((path: string) => path === pathname, [pathname]);
+   const isActive = useCallback((path: string) => path === pathname || (path !== "/" && pathname.startsWith(`${path}/`)), [pathname]);
 
   useEffect(() => {
     // Check if the current path matches any submenu item

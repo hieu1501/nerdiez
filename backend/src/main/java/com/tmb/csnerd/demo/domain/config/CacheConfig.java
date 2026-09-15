@@ -6,17 +6,27 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.tmb.csnerd.demo.domain.cache.CachePolicy;
 import com.tmb.csnerd.demo.domain.cache.category.CategoryCacheProperties;
 import com.tmb.csnerd.demo.domain.cache.post.PostCacheProperties;
+import com.tmb.csnerd.demo.domain.cache.tag.TagCacheProperties;
+import com.tmb.csnerd.demo.domain.cache.talk.TalkCacheProperties;
 import com.tmb.csnerd.demo.domain.cache.topic.TopicCacheProperties;
 import com.tmb.csnerd.demo.domain.services.category.CategoryContentLoader;
 import com.tmb.csnerd.demo.domain.services.post.PostContentLoader;
+import com.tmb.csnerd.demo.domain.services.tag.TagContentLoader;
+import com.tmb.csnerd.demo.domain.services.talk.TalkContentLoader;
 import com.tmb.csnerd.demo.domain.services.topic.TopicContentLoader;
+import com.tmb.csnerd.demo.domain.services.vote.VoteContentLoader;
 import com.tmb.csnerd.demo.dto.category.adminresponse.CategoryAdminDetailDTO;
 import com.tmb.csnerd.demo.dto.category.publicresponse.CategoryPublicDetailDTO;
 import com.tmb.csnerd.demo.dto.common.CachedContent;
+import com.tmb.csnerd.demo.dto.VoteStatsDTO;
 import com.tmb.csnerd.demo.dto.post.adminresponse.AdminPostBriefContentDTO;
 import com.tmb.csnerd.demo.dto.post.adminresponse.AdminPostDetailContentDTO;
 import com.tmb.csnerd.demo.dto.post.publicresponse.PublicPostBriefContentDTO;
 import com.tmb.csnerd.demo.dto.post.publicresponse.PublicPostDetailContentDTO;
+import com.tmb.csnerd.demo.dto.tag.adminresponse.TagAdminDetailDTO;
+import com.tmb.csnerd.demo.dto.tag.publicresponse.TagPublicDetailDTO;
+import com.tmb.csnerd.demo.dto.talk.adminresponse.AdminTalkContentDTO;
+import com.tmb.csnerd.demo.dto.talk.publicresponse.PublicTalkContentDTO;
 import com.tmb.csnerd.demo.dto.topic.adminresponse.TopicAdminDetailDTO;
 import com.tmb.csnerd.demo.dto.topic.publicresponse.TopicPublicDetailDTO;
 import org.jspecify.annotations.NullMarked;
@@ -34,7 +44,7 @@ import java.util.function.Supplier;
 
 @Configuration
 @EnableCaching
-@EnableConfigurationProperties({PostCacheProperties.class, CategoryCacheProperties.class, TopicCacheProperties.class})
+@EnableConfigurationProperties({PostCacheProperties.class, CategoryCacheProperties.class, TagCacheProperties.class, TopicCacheProperties.class, TalkCacheProperties.class})
 public class CacheConfig {
 
     @Bean("adminPostListCache")
@@ -67,14 +77,44 @@ public class CacheConfig {
         return buildSingleCacheForListing(properties.publicList(), categoryContentLoader::loadAllCategoriesForPublic);
     }
 
+    @Bean("adminTagListCache")
+    LoadingCache<String, List<TagAdminDetailDTO>> adminTagListCache(TagContentLoader tagContentLoader, TagCacheProperties properties) {
+        return buildSingleCacheForListing(properties.adminList(), tagContentLoader::loadTagsForAdmin);
+    }
+
+    @Bean("publicTagListCache")
+    LoadingCache<String, List<TagPublicDetailDTO>> publicTagListCache(TagContentLoader tagContentLoader, TagCacheProperties properties) {
+        return buildSingleCacheForListing(properties.publicList(), tagContentLoader::loadTagsForPublic);
+    }
+
     @Bean("adminTopicListCache")
-    LoadingCache<Long, List<TopicAdminDetailDTO>> adminTopicListCache(TopicContentLoader topicContentLoader, TopicCacheProperties properties) {
-        return buildBulkCache(properties.adminList(), topicContentLoader::loadAdminTopicsByCategoryIds);
+    LoadingCache<Long, CachedContent<TopicAdminDetailDTO>> adminTopicListCache(TopicContentLoader topicContentLoader, TopicCacheProperties properties) {
+        return buildBulkCache(properties.adminList(), topicContentLoader::loadAllTopicsForAdminByIds);
     }
 
     @Bean("publicTopicListCache")
-    LoadingCache<Long, List<TopicPublicDetailDTO>> publicTopicListCache(TopicContentLoader topicContentLoader, TopicCacheProperties properties) {
-        return buildBulkCache(properties.publicList(), topicContentLoader::loadPublicTopicsByCategoryIds);
+    LoadingCache<Long, CachedContent<TopicPublicDetailDTO>> publicTopicListCache(TopicContentLoader topicContentLoader, TopicCacheProperties properties) {
+        return buildBulkCache(properties.publicList(), topicContentLoader::loadAllTopicsForPublicByIds);
+    }
+
+    @Bean("postVoteCache")
+    LoadingCache<Long, VoteStatsDTO> postVoteCache(VoteContentLoader voteContentLoader, PostCacheProperties properties) {
+        return buildBulkCache(properties.vote(), voteContentLoader::loadPostVoteInformationByPostIds);
+    }
+
+    @Bean("adminTalksCache")
+    LoadingCache<Long, CachedContent<AdminTalkContentDTO>> adminTalkDetailCache(TalkContentLoader talkContentLoader, TalkCacheProperties properties) {
+        return buildBulkCache(properties.adminDetail(), talkContentLoader::loadAdminContentByIds);
+    }
+
+    @Bean("publicTalksCache")
+    LoadingCache<Long, CachedContent<PublicTalkContentDTO>> publicTalkDetailCache(TalkContentLoader talkContentLoader, TalkCacheProperties properties) {
+        return buildBulkCache(properties.publicDetail(), talkContentLoader::loadPublicContentByIds);
+    }
+
+    @Bean("talkVoteCache")
+    LoadingCache<Long, VoteStatsDTO> talkVoteCache(VoteContentLoader voteContentLoader, TalkCacheProperties properties) {
+        return buildBulkCache(properties.vote(), voteContentLoader::loadTalkVoteInformationByTalkIds);
     }
 
     private static <V> LoadingCache<Long, V> buildBulkCache(CachePolicy policy, Function<Set<Long>, Map<Long, V>> loader) {

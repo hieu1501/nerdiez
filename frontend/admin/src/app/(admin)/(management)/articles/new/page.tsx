@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { articlesService } from "@/services/articles";
 import { categoriesService, Category } from "@/services/categories";
-import { topicsService, Topic } from "@/services/topics";
+import { tagsService, Tag } from "@/services/tags";
 import { uploadFile } from "@/services/upload";
 import { compressImage } from "@/lib/compress";
 import { isAllowedImageUrl } from "@/lib/url";
@@ -24,8 +24,8 @@ export default function NewArticlePage() {
   const [categoryId, setCategoryId] = useState<number>(0);
   const [content, setContent] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [featuredImage, setFeaturedImage] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -33,35 +33,24 @@ export default function NewArticlePage() {
   const [coverPreviewUrl, setCoverPreviewUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const toast = useToast();
+  const showError = toast.error;
   const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; status: string }>({ show: false, status: "" });
 
   useEffect(() => {
     Promise.all([
       categoriesService.getAll(),
-      topicsService.getAll(),
+      tagsService.getAll(),
     ])
       .then(([cats, tops]) => {
         setCategories(cats);
-        setTopics(tops);
+        setTags(tops);
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => showError("Failed to load categories and tags."));
+  }, [showError]);
 
-  const availableTopics = useMemo(
-    () => topics.filter((topic) => topic.category.categoryId === categoryId),
-    [categoryId, topics],
-  );
+  const availableTags = tags;
 
-  const handleCategoryChange = (value: string) => {
-    const nextCategoryId = Number(value);
-    if (nextCategoryId === categoryId) return;
-
-    if (selectedTopicIds.length > 0) {
-      toast.info("Selected topics were cleared because the category changed.");
-    }
-    setCategoryId(nextCategoryId);
-    setSelectedTopicIds([]);
-  };
+  const handleCategoryChange = (value: string) => setCategoryId(Number(value));
 
   const handleImageChange = async (file: File | null) => {
     if (!file) {
@@ -93,14 +82,15 @@ export default function NewArticlePage() {
   };
 
   const handleSave = async (status: string) => {
+    if (saving) return;
     setConfirmDialog({ show: false, status: "" });
-    if (!title.trim() || !categoryId || selectedTopicIds.length === 0) {
-      toast.error("Title, category, and at least one topic are required.");
+    if (!title.trim() || !content.trim() || !categoryId || selectedTagIds.length === 0) {
+      toast.error("Title, content, category, and at least one tag are required.");
       return;
     }
-    const availableTopicIds = new Set(availableTopics.map((topic) => topic.topicId));
-    if (selectedTopicIds.some((topicId) => !availableTopicIds.has(Number(topicId)))) {
-      toast.error("Every selected topic must belong to the selected category.");
+    const availableTagIds = new Set(availableTags.map((tag) => tag.tagId));
+    if (selectedTagIds.some((tagId) => !availableTagIds.has(Number(tagId)))) {
+      toast.error("One or more selected tags are no longer available.");
       return;
     }
     if (featuredImage && !isAllowedImageUrl(featuredImage)) {
@@ -109,7 +99,7 @@ export default function NewArticlePage() {
     }
     setSaving(true);
     try {
-      await articlesService.create({ title: title, content: content, description: description, featuredImage: featuredImage, categoryId: categoryId, isActive: status === "Published", topicIds: selectedTopicIds.map(Number) });
+      await articlesService.create({ title: title, content: content, description: description, featuredImage: featuredImage, categoryId: categoryId, isActive: status === "Published", tagIds: selectedTagIds.map(Number) });
       router.push("/articles");
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Failed to save article.");
@@ -187,23 +177,16 @@ export default function NewArticlePage() {
         </div>
         <div className="w-60">
           <MultiSelect
-            label="Topics"
-            options={availableTopics.map((t) => ({
-              value: String(t.topicId),
-              text: t.name,
-              selected: selectedTopicIds.includes(String(t.topicId)),
+            label="Tags"
+            options={availableTags.map((t) => ({
+              value: String(t.tagId),
+              text: t.slugName,
+              selected: selectedTagIds.includes(String(t.tagId)),
             }))}
-            value={selectedTopicIds}
-            onChange={setSelectedTopicIds}
-            disabled={!categoryId}
-            placeholder={
-              !categoryId
-                ? "Select a category first"
-                : availableTopics.length === 0
-                  ? "No topics available"
-                  : "Select topics..."
-            }
-            emptyMessage="No topics available for this category"
+            value={selectedTagIds}
+            onChange={setSelectedTagIds}
+            placeholder="Select tags..."
+            emptyMessage="No tags available. Create a tag first."
           />
         </div>
         <div className="w-44">

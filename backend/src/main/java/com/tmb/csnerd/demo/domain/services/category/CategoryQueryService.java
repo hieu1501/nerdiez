@@ -7,7 +7,8 @@ import com.tmb.csnerd.demo.dto.category.publicresponse.CategoryPublicDetailDTO;
 import com.tmb.csnerd.demo.dto.common.CachedContent;
 import com.tmb.csnerd.demo.dto.common.ETagResponse;
 import com.tmb.csnerd.demo.exceptions.category.CategoryByIdNotFoundException;
-import com.tmb.csnerd.demo.utils.ETagFactory;
+import com.tmb.csnerd.demo.domain.services.cache.ETagFactory;
+import com.tmb.csnerd.demo.exceptions.category.CategoryByNameNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -48,7 +49,10 @@ public class CategoryQueryService {
     }
 
     public Category getCategoryById(Long id) {
-        return categoryRepository.findById(id)
-                .orElseThrow(() -> new CategoryByIdNotFoundException(id));
+        return categoryRepository.findById(id).orElseThrow(() -> new CategoryByIdNotFoundException(id));
+    }
+
+    public Category getActiveCategoryBySlug(String slug) {
+        return categoryRepository.findActiveBySlugName(slug).orElseThrow(() -> new CategoryByNameNotFoundException(slug));
     }
 }

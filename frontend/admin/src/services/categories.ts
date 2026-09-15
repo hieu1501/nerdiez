@@ -16,7 +16,7 @@ export interface CreateCategoryRequestDTO {
   isActive?: boolean | null;
 }
 
-export interface ReplaceCategoryRequestDTO {
+export interface UpdateCategoryRequestDTO {
   name: string;
   description?: string | null;
   isActive?: boolean | null;
@@ -26,7 +26,7 @@ export const categoriesService = {
   getAll: () => api.get<CategoryAdminDetailDTO[]>("/categories/all", true),
   create: (data: CreateCategoryRequestDTO) =>
     api.post<CategoryAdminDetailDTO>("/categories", data, true),
-  update: (categoryId: number, data: ReplaceCategoryRequestDTO) =>
-    api.put<CategoryAdminDetailDTO>(`/categories/${categoryId}`, data, true),
+  update: (categoryId: number, data: UpdateCategoryRequestDTO) =>
+    api.patch<CategoryAdminDetailDTO>(`/categories/${categoryId}`, data, true),
   delete: (categoryId: number) => api.delete<void>(`/categories/${categoryId}`, true),
 };

@@ -5,17 +5,14 @@ import com.tmb.csnerd.demo.domain.cache.post.PostListChangedEvent;
 import com.tmb.csnerd.demo.domain.services.post.PostQueryService;
 import com.tmb.csnerd.demo.dto.category.adminresponse.CategoryAdminDetailDTO;
 import com.tmb.csnerd.demo.dto.category.request.CreateCategoryRequestDTO;
-import com.tmb.csnerd.demo.dto.category.request.ReplaceCategoryRequestDTO;
 import com.tmb.csnerd.demo.dto.category.request.UpdateCategoryRequestDTO;
 import com.tmb.csnerd.demo.exceptions.ConflictStatusException;
 import com.tmb.csnerd.demo.exceptions.category.CategoryByIdNotFoundException;
 import com.tmb.csnerd.demo.domain.models.Category;
 import com.tmb.csnerd.demo.domain.repositories.category.CategoryRepository;
-import com.tmb.csnerd.demo.domain.repositories.post.PostRepository;
 import com.tmb.csnerd.demo.utils.SlugifyUtils;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -57,32 +54,27 @@ public class CategoryCommandService {
     }
 
     @Transactional
-    public CategoryAdminDetailDTO putCategory(Long categoryId, ReplaceCategoryRequestDTO request) {
+    public void softDeleteCategory(Long categoryId) {
         Category category = categoryRepository.findById(categoryId)
-                .orElse(null);
-        if (category == null) {
-            category = new Category();
-        }
-        modifyCategoryIfChanged(category, request.name(), request.description(), request.isActive());
-        category = categoryRepository.save(category);
+                .orElseThrow(() -> new CategoryByIdNotFoundException(categoryId));
+        category.setIsActive(false);
+        categoryRepository.save(category);
         eventPublisher.publishEvent(new CategoryChangedEvent());
         List<Long> modifiedPostIds = postQueryService.getPostIdsByCategoryId(categoryId);
         if (!modifiedPostIds.isEmpty()) {
             Set<Long> stalePostIds = Set.copyOf(modifiedPostIds);
             eventPublisher.publishEvent(new PostListChangedEvent(stalePostIds));
         }
-        return CategoryAdminDetailDTO.from(category);
     }
 
-    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
-    public void deleteCategory(Long categoryId) {
+    public void hardDeleteCategory(Long categoryId) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new CategoryByIdNotFoundException(categoryId));
-        if (postQueryService.existsActiveByCategoryId(categoryId)) {
-            throw new ConflictStatusException("Category is used by active posts");
+        if (postQueryService.existsPostByCategoryId(categoryId)) {
+            throw new ConflictStatusException("Category is used by posts");
         }
-        categoryRepository.save(category);
+        categoryRepository.delete(category);
         eventPublisher.publishEvent(new CategoryChangedEvent());
         List<Long> modifiedPostIds = postQueryService.getPostIdsByCategoryId(categoryId);
         if (!modifiedPostIds.isEmpty()) {

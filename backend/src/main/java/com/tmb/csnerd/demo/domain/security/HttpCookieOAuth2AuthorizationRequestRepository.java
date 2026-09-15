@@ -1,7 +1,7 @@
 package com.tmb.csnerd.demo.domain.security;
 
 import com.nimbusds.oauth2.sdk.util.StringUtils;
-import com.tmb.csnerd.demo.utils.AuthUtils;
+import com.tmb.csnerd.demo.domain.services.auth.AuthUtils;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;

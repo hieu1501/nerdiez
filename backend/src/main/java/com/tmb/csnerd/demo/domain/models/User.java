@@ -54,5 +54,8 @@ public class User {
     private UserRole role;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<PostsVote> votes;
+    private Set<PostsVote> postsVotes;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<TalksVote> talksVotes;
 }

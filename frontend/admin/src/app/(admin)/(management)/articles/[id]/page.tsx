@@ -114,14 +114,14 @@ export default function ArticleDetailPage() {
             <span>Updated: <strong className="text-gray-700 dark:text-white/90">{new Date(content.updatedAt).toLocaleString()}</strong></span>
           </div>
 
-          {content.topics.length > 0 && (
+          {content.tags.length > 0 && (
             <div className="mb-6 flex flex-wrap gap-2">
-              {content.topics.map((topic) => (
+              {content.tags.map((tag) => (
                 <span
-                  key={topic.topicId}
+                  key={tag.tagId}
                   className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-white/90"
                 >
-                  {topic.name}
+                  {tag.slugName}
                 </span>
               ))}
             </div>

@@ -1,10 +1,13 @@
 import { isValidElement } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarDays } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { PublicPostDetailDTO } from "@/lib/api";
-import VoteControls from "./vote-controls";
+import ArticleVotes from "./article-votes";
+import { Tags } from "@/app/components/content-ui";
+import { categoryHref } from "@/lib/resource-links";
+import ArticleTableOfContents, { type TableOfContentsItem } from "./article-table-of-contents";
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -13,21 +16,17 @@ function formatDate(value: string) {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   });
-}
-
-interface TocItem {
-  id: string;
-  text: string;
-  level: number;
 }
 
 function slugify(text: string): string {
   return text
+    .normalize("NFKD")
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
+    .replace(/[^\p{Letter}\p{Number}\s-]/gu, "")
     .trim()
-    .replace(/\s+/g, "-");
+    .replace(/\s+/g, "-") || "section";
 }
 
 function textFromChildren(children: React.ReactNode): string {
@@ -39,69 +38,97 @@ function textFromChildren(children: React.ReactNode): string {
   return "";
 }
 
-function extractHeadings(content: string): TocItem[] {
-  const items: TocItem[] = [];
+function plainHeading(text: string): string {
+  return text
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/<[^>]+>/g, "")
+    .replace(/[*_~`]/g, "")
+    .replace(/\s+#+\s*$/, "")
+    .trim();
+}
+
+function uniqueIdFactory() {
+  const seen = new Map<string, number>();
+  return (text: string) => {
+    const base = slugify(text);
+    const count = seen.get(base) ?? 0;
+    seen.set(base, count + 1);
+    return count === 0 ? base : `${base}-${count + 1}`;
+  };
+}
+
+function extractHeadings(content: string): TableOfContentsItem[] {
+  const items: TableOfContentsItem[] = [];
+  const headingId = uniqueIdFactory();
   for (const line of content.split("\n")) {
     const match = line.match(/^(#{1,3})\s+(.+?)\s*$/);
     if (!match) continue;
     const level = match[1].length;
-    const text = match[2].replace(/[*`]/g, "").trim();
-    items.push({ id: slugify(text), text, level });
+    const text = plainHeading(match[2]);
+    items.push({ id: headingId(text), text, level });
   }
   return items;
 }
 
-function tocIndentClass(level: number): string {
-  if (level === 3) return "pl-6";
-  if (level === 2) return "pl-3";
-  return "";
-}
-
-interface ArticleReaderProps {
+export interface ArticleReaderProps {
   categorySlug: string;
   categoryName: string;
-  slugName: string;
+  publicUri: string;
   article: PublicPostDetailDTO;
+  presentation?: "page" | "modal";
 }
 
 export default function ArticleReader({
   categorySlug,
   categoryName,
-  slugName,
+  publicUri,
   article,
+  presentation = "page",
 }: ArticleReaderProps) {
   const toc = extractHeadings(article.content.content);
+  const nextHeadingId = uniqueIdFactory();
+  const inModal = presentation === "modal";
+  const publishedAt = formatDate(article.content.createdAt);
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-5 py-10 sm:px-8 sm:py-14">
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_230px]">
-        <article className="mx-auto w-full max-w-[720px]">
-          <Link
-            href={`/articles/${encodeURIComponent(categorySlug)}`}
-            className="inline-flex items-center gap-1.5 text-sm text-muted no-underline transition-colors hover:text-ink"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {categoryName}
-          </Link>
+    <div className={`mx-auto w-full max-w-[1180px] px-4 sm:px-6 ${inModal ? "pb-12 pt-5" : "py-7 sm:py-10"}`}>
+      <div className="grid gap-10 min-[1180px]:grid-cols-[minmax(0,760px)_220px] min-[1180px]:justify-center min-[1180px]:gap-12">
+        <article className="mx-auto w-full max-w-[760px] min-w-0">
+          {article.content.featuredImage && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={article.content.featuredImage}
+              alt=""
+              loading="lazy"
+              className="aspect-[2/1] w-full rounded-lg border border-line bg-soft object-cover shadow-[0_18px_50px_-32px_rgba(0,0,0,0.5)]"
+            />
+          )}
 
-          <h1 className="mt-6 text-3xl font-bold leading-tight sm:text-4xl">
-            {article.content.title}
-          </h1>
+          <header className={article.content.featuredImage ? "mt-7 sm:mt-9" : ""}>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+              <Link
+                href={categoryHref(categorySlug)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.13em] text-muted no-underline transition-colors hover:text-ink"
+              >
+                {!inModal && <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />}
+                {categoryName}
+              </Link>
+              <span className="h-px w-7 bg-line" aria-hidden="true" />
+              <Tags tags={article.content.tags} />
+            </div>
 
-          <div className="mt-4 flex flex-col gap-3 text-xs text-muted">
-            {article.content.topics.length > 0 && (
-              <span className="flex flex-wrap gap-1.5" aria-label="Topics">
-                {article.content.topics.map((topic) => (
-                  <span
-                    key={topic.slugName}
-                    className="rounded border border-accent/25 bg-accent-soft px-2 py-0.5 text-[11px] text-accent"
-                  >
-                    {topic.name}
-                  </span>
-                ))}
-              </span>
+            <h1 className="mt-5 max-w-[18ch] text-[clamp(2rem,5vw,3.25rem)] font-bold leading-[1.08] tracking-[-0.035em]">
+              {article.content.title}
+            </h1>
+
+            {article.content.description && (
+              <p className="mt-5 max-w-[64ch] text-base leading-7 text-muted sm:text-lg sm:leading-8">
+                {article.content.description}
+              </p>
             )}
-            <div className="flex flex-wrap items-center gap-3">
+
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 border-y border-line py-3 text-xs text-muted">
               <span className="inline-flex items-center gap-2" aria-label="Author">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
                   {article.content.author.username.charAt(0).toUpperCase()}
@@ -111,70 +138,31 @@ export default function ArticleReader({
                   <span className="text-ink">{article.content.author.username}</span>
                 </span>
               </span>
-              <div className="ml-auto flex flex-col items-end gap-1 text-right">
-                <span className="text-sm">
-                  <span className="mr-2 text-[10px] font-medium uppercase tracking-widest text-muted/70">
-                    Published
-                  </span>
-                  {formatDate(article.content.createdAt)}
-                </span>
-              </div>
+              {publishedAt && <time dateTime={article.content.createdAt} className="ml-auto inline-flex items-center gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                {publishedAt}
+              </time>}
             </div>
-          </div>
+          </header>
 
-          {article.content.featuredImage && (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={article.content.featuredImage}
-              alt=""
-              loading="lazy"
-              className="mx-auto mt-8 aspect-[2/1] w-[95%] rounded-md object-cover"
-            />
-          )}
+          {toc.length > 0 && <div className="min-[1180px]:hidden"><ArticleTableOfContents items={toc} presentation={presentation} /></div>}
 
-          {article.content.description && (
-            <p className="mt-8 border-b border-line pb-4 text-base leading-7 text-muted">
-              {article.content.description}
-            </p>
-          )}
-
-          {toc.length > 0 && (
-            <details className="mt-8 rounded-lg border border-line px-4 py-3 lg:hidden">
-              <summary className="cursor-pointer select-none text-sm font-bold">
-                Table of contents
-              </summary>
-              <nav className="mt-3 flex flex-col gap-1.5" aria-label="Table of contents">
-                {toc.map((item) => (
-                  <a
-                    key={item.id}
-                    href={`#${item.id}`}
-                    className={`text-sm text-muted transition-colors hover:text-ink ${tocIndentClass(
-                      item.level
-                    )}`}
-                  >
-                    {item.text}
-                  </a>
-                ))}
-              </nav>
-            </details>
-          )}
-
-          <div className="reader-content pt-8">
+          <div className="reader-content pt-8 sm:pt-10">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
                 h1: ({ children }) => (
-                  <h1 id={slugify(textFromChildren(children))} className="scroll-mt-24">
+                  <h1 id={nextHeadingId(textFromChildren(children))} className="scroll-mt-24">
                     {children}
                   </h1>
                 ),
                 h2: ({ children }) => (
-                  <h2 id={slugify(textFromChildren(children))} className="scroll-mt-24">
+                  <h2 id={nextHeadingId(textFromChildren(children))} className="scroll-mt-24">
                     {children}
                   </h2>
                 ),
                 h3: ({ children }) => (
-                  <h3 id={slugify(textFromChildren(children))} className="scroll-mt-24">
+                  <h3 id={nextHeadingId(textFromChildren(children))} className="scroll-mt-24">
                     {children}
                   </h3>
                 ),
@@ -184,42 +172,17 @@ export default function ArticleReader({
             </ReactMarkdown>
           </div>
 
-          <div className="mt-10 flex flex-wrap items-start justify-between gap-4 border-t border-line pt-5">
-            <p className="pt-2 text-sm text-muted">
-              What did you think? Like or dislike this article.
-            </p>
-            <VoteControls
-              key={`${categorySlug}/${slugName}`}
-              categorySlug={categorySlug}
-              slugName={slugName}
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5">
+            <ArticleVotes
+              key={publicUri}
+              publicUri={publicUri}
               initialVoteStats={article.voteStats}
               initialUserVote={article.userVote}
             />
           </div>
         </article>
 
-        {toc.length > 0 && (
-          <aside className="hidden lg:block">
-            <div className="sticky top-8">
-              <p className="text-xs font-bold uppercase tracking-[0.15em] text-muted">
-                On this page
-              </p>
-              <nav className="mt-3 flex flex-col gap-2" aria-label="On this page">
-                {toc.map((item) => (
-                  <a
-                    key={item.id}
-                    href={`#${item.id}`}
-                    className={`text-sm leading-5 text-muted transition-colors hover:text-ink ${tocIndentClass(
-                      item.level
-                    )}`}
-                  >
-                    {item.text}
-                  </a>
-                ))}
-              </nav>
-            </div>
-          </aside>
-        )}
+        {toc.length > 0 && <div className="hidden h-full min-[1180px]:block"><ArticleTableOfContents items={toc} presentation={presentation} /></div>}
       </div>
     </div>
   );

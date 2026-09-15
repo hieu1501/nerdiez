@@ -4,6 +4,7 @@ import java.time.Instant;
 
 public interface AdminPostBriefContentProjection {
     Long getId();
+    String getPublicUri();
     String getSlug();
     String getTitle();
     String getAuthorName();

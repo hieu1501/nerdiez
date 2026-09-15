@@ -16,6 +16,7 @@ class ApiError extends Error {
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
 const inFlight = new Map<string, Promise<unknown>>();
+let cacheGeneration = 0;
 const failedGets = new Map<string, { error: ApiError; timestamp: number }>();
 
 function cacheKey(endpoint: string, admin: boolean): string {
@@ -42,8 +43,10 @@ function getCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   const pending = inFlight.get(key);
   if (pending) return pending as Promise<T>;
 
+  const generation = cacheGeneration;
   const promise = fetcher()
     .then((data) => {
+      if (generation !== cacheGeneration) return data;
       cache.delete(key);
       cache.set(key, { data, timestamp: Date.now() });
       while (cache.size > MAX_CACHE_ENTRIES) {
@@ -56,6 +59,7 @@ function getCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
       return data;
     })
     .catch((err) => {
+      if (generation !== cacheGeneration) throw err;
       if (err instanceof ApiError && err.status >= 500) {
         failedGets.delete(key);
         failedGets.set(key, { error: err, timestamp: Date.now() });
@@ -73,7 +77,9 @@ function getCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   return promise;
 }
 
-function invalidateCache(endpoint?: string) {
+export function invalidateCache(endpoint?: string) {
+  cacheGeneration += 1;
+  inFlight.clear();
   if (!endpoint) {
     cache.clear();
     failedGets.clear();
@@ -232,8 +238,10 @@ async function requestFormData<T>(
   return parseResponse<T>(res);
 }
 
-function collectionPath(endpoint: string): string {
+function collectionPath(endpoint: string): string | undefined {
   const parts = endpoint.split("/").filter(Boolean);
+  // Clear related content caches as a group; references and usage counts cross resources.
+  if (["tags", "topics", "talks", "articles", "categories"].includes(parts[0])) return undefined;
   return parts.length >= 1 ? `/${parts[0]}` : endpoint;
 }
 
@@ -250,7 +258,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
       ...options,
-    });
+    }).finally(() => invalidateCache(collectionPath(endpoint)));
   },
   postFormData: <T>(endpoint: string, formData: FormData, admin: boolean, options?: RequestInit) => {
     invalidateCache(collectionPath(endpoint));
@@ -262,7 +270,7 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(data),
       ...options,
-    });
+    }).finally(() => invalidateCache(collectionPath(endpoint)));
   },
   patch: <T>(endpoint: string, data: unknown, admin: boolean, options?: RequestInit) => {
     invalidateCache(collectionPath(endpoint));
@@ -270,7 +278,7 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(data),
       ...options,
-    });
+    }).finally(() => invalidateCache(collectionPath(endpoint)));
   },
   patchFormData: <T>(endpoint: string, formData: FormData, admin: boolean, options?: RequestInit) => {
     invalidateCache(collectionPath(endpoint));
@@ -278,7 +286,8 @@ export const api = {
   },
   delete: <T>(endpoint: string, admin: boolean, options?: RequestInit) => {
     invalidateCache(collectionPath(endpoint));
-    return request<T>(endpoint, admin, { method: "DELETE", ...options });
+    return request<T>(endpoint, admin, { method: "DELETE", ...options })
+      .finally(() => invalidateCache(collectionPath(endpoint)));
   },
 };
 

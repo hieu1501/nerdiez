@@ -1,12 +1,12 @@
 package com.tmb.csnerd.demo.domain.services.auth;
 
 import com.tmb.csnerd.demo.domain.models.PostsVote;
+import com.tmb.csnerd.demo.domain.models.TalksVote;
 import com.tmb.csnerd.demo.domain.models.User;
 import com.tmb.csnerd.demo.domain.models.UserRole;
 import com.tmb.csnerd.demo.domain.repositories.user.UserRepository;
 import com.tmb.csnerd.demo.domain.security.UserPrincipal;
 import com.tmb.csnerd.demo.domain.repositories.user.UserRoleRepository;
-import com.tmb.csnerd.demo.utils.AuthUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -45,8 +45,10 @@ public class UserPrincipalService implements UserDetailsService {
         user.setSubject(subject);
         user.setActive(true);
         user.setRole(role);
-        Set<PostsVote> votes = Set.of();
-        user.setVotes(votes);
+        Set<PostsVote> postVotes = Set.of();
+        Set<TalksVote> talkVotes = Set.of();
+        user.setPostsVotes(postVotes);
+        user.setTalksVotes(talkVotes);
         return new UserPrincipal(userRepository.save(user));
     }
 

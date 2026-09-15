@@ -2,6 +2,7 @@ package com.tmb.csnerd.demo.domain.models;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,10 +14,12 @@ import java.util.Objects;
 @Embeddable
 @Getter @Setter @AllArgsConstructor @NoArgsConstructor
 public class PostsVoteId implements Serializable {
-    @Column(name = "post_id")
+    @NotNull
+    @Column(name = "post_id", nullable = false)
     private Long postId;
 
-    @Column(name = "user_id")
+    @NotNull
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @Override

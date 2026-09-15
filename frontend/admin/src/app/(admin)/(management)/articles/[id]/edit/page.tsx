@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { articlesService, AdminPostDetailContentDTO } from "@/services/articles";
-import { categoriesService, Category } from "@/services/categories";
-import { topicsService, Topic } from "@/services/topics";
+import { tagsService, Tag } from "@/services/tags";
 import { uploadFile } from "@/services/upload";
 import { compressImage } from "@/lib/compress";
 import { isAllowedImageUrl } from "@/lib/url";
@@ -14,7 +13,6 @@ import ToastContainer from "@/components/ui/toast/Toast";
 import { Modal } from "@/components/ui/modal";
 import RichTextEditor from "@/components/management/RichTextEditor";
 import TableOfContents from "@/components/management/TableOfContents";
-import Select from "@/components/form/Select";
 import MultiSelect from "@/components/form/MultiSelect";
 import Button from "@/components/ui/button/Button";
 
@@ -27,9 +25,8 @@ export default function EditArticlePage() {
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState<number>(0);
   const [content, setContent] = useState("");
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [selectedTopicIds, setSelectedTopicIds] = useState<number[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [description, setDescription] = useState("");
   const [featuredImage, setFeaturedImage] = useState<string>("");
@@ -39,16 +36,14 @@ export default function EditArticlePage() {
   const [saving, setSaving] = useState(false);
   const toast = useToast();
   const showError = toast.error;
-  const showWarning = toast.warning;
   const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; status: string }>({ show: false, status: "" });
 
   useEffect(() => {
     Promise.all([
       articlesService.getById(id),
-      categoriesService.getAll(),
-      topicsService.getAll(),
+      tagsService.getAll(),
     ])
-      .then(([response, cats, tops]) => {
+      .then(([response, tops]) => {
         const art = response.content;
         setArticle(art);
         setTitle(art.title);
@@ -56,41 +51,20 @@ export default function EditArticlePage() {
         setContent(art.content || "");
         setDescription(art.description || "");
         setFeaturedImage(art.featuredImage ?? "");
-        setCategories(cats);
-        setTopics(tops);
-        const categoryTopicIds = new Set(
-          tops
-            .filter((topic) => topic.category.categoryId === art.category.categoryId)
-            .map((topic) => topic.topicId),
-        );
-        const articleTopicIds = art.topics.map((topic) => topic.topicId);
-        const validTopicIds = articleTopicIds.filter((topicId) => categoryTopicIds.has(topicId));
-        setSelectedTopicIds(validTopicIds);
-        if (validTopicIds.length !== articleTopicIds.length) {
-          showWarning("Some topics were removed because they do not belong to the article category.");
-        }
+        setTags(tops);
+        setSelectedTagIds(art.tags.map((tag) => tag.tagId));
       })
       .catch((e) => {
         showError(e instanceof ApiError ? e.message : "Failed to load article.");
       })
       .finally(() => setLoading(false));
-  }, [id, showError, showWarning]);
+  }, [id, showError]);
 
-  const availableTopics = useMemo(
-    () => topics.filter((topic) => topic.category.categoryId === categoryId),
-    [categoryId, topics],
-  );
+  const availableTags = [
+    ...tags,
+    ...(article?.tags.filter((tag) => !tags.some((item) => item.tagId === tag.tagId)) ?? []),
+  ];
 
-  const handleCategoryChange = (value: string) => {
-    const nextCategoryId = Number(value);
-    if (nextCategoryId === categoryId) return;
-
-    if (selectedTopicIds.length > 0) {
-      toast.info("Selected topics were cleared because the category changed.");
-    }
-    setCategoryId(nextCategoryId);
-    setSelectedTopicIds([]);
-  };
 
   const handleImageChange = async (file: File | null) => {
     if (!file) {
@@ -122,14 +96,15 @@ export default function EditArticlePage() {
   };
 
   const handleSave = async (status: string) => {
+    if (saving) return;
     setConfirmDialog({ show: false, status: "" });
-    if (!title.trim() || !categoryId || selectedTopicIds.length === 0) {
-      toast.error("Title, category, and at least one topic are required.");
+    if (!title.trim() || !content.trim() || !categoryId || selectedTagIds.length === 0) {
+      toast.error("Title, content, category, and at least one tag are required.");
       return;
     }
-    const availableTopicIds = new Set(availableTopics.map((topic) => topic.topicId));
-    if (selectedTopicIds.some((topicId) => !availableTopicIds.has(topicId))) {
-      toast.error("Every selected topic must belong to the selected category.");
+    const availableTagIds = new Set(availableTags.map((tag) => tag.tagId));
+    if (selectedTagIds.some((tagId) => !availableTagIds.has(tagId))) {
+      toast.error("One or more selected tags are no longer available.");
       return;
     }
     if (featuredImage && !isAllowedImageUrl(featuredImage)) {
@@ -139,12 +114,11 @@ export default function EditArticlePage() {
     if (article) {
       const changed =
         title !== article.title ||
-        categoryId !== article.category.categoryId ||
         content !== (article.content || "") ||
         description !== (article.description || "") ||
         featuredImage !== (article.featuredImage ?? "") ||
-        selectedTopicIds.length !== article.topics.length ||
-        selectedTopicIds.some((topicId, index) => topicId !== article.topics[index]?.topicId) ||
+        selectedTagIds.length !== article.tags.length ||
+        selectedTagIds.some((tagId, index) => tagId !== article.tags[index]?.tagId) ||
         (status === "Published") !== article.isActive;
       if (!changed) {
         router.push("/articles");
@@ -153,7 +127,7 @@ export default function EditArticlePage() {
     }
     setSaving(true);
     try {
-      await articlesService.update(id, { title, content, featuredImage, description, categoryId, topicIds: selectedTopicIds, isActive: status === "Published" });
+      await articlesService.patch(id, { title, content, featuredImage, description, tagIds: selectedTagIds, isActive: status === "Published" });
       router.push("/articles");
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Failed to save article.");
@@ -257,36 +231,21 @@ export default function EditArticlePage() {
           />
         </div>
         <div className="w-44">
-          <Select
-            label="Category"
-            options={categories.map((c) => ({
-              value: String(c.categoryId),
-              label: c.name,
-            }))}
-            placeholder="Select category"
-            defaultValue={categoryId ? String(categoryId) : ""}
-            onChange={handleCategoryChange}
-          />
+          <span className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Category</span>
+          <p className="py-2.5 text-sm text-gray-800 dark:text-white/90">{article.category.name}</p>
         </div>
         <div className="w-60">
           <MultiSelect
-            label="Topics"
-            options={availableTopics.map((t) => ({
-              value: String(t.topicId),
-              text: t.name,
-              selected: selectedTopicIds.includes(t.topicId),
+            label="Tags"
+            options={availableTags.map((t) => ({
+              value: String(t.tagId),
+              text: t.slugName,
+              selected: selectedTagIds.includes(t.tagId),
             }))}
-            value={selectedTopicIds.map(String)}
-            onChange={(selected) => setSelectedTopicIds(selected.map(Number))}
-            disabled={!categoryId}
-            placeholder={
-              !categoryId
-                ? "Select a category first"
-                : availableTopics.length === 0
-                  ? "No topics available"
-                  : "Select topics..."
-            }
-            emptyMessage="No topics available for this category"
+            value={selectedTagIds.map(String)}
+            onChange={(selected) => setSelectedTagIds(selected.map(Number))}
+            placeholder="Select tags..."
+            emptyMessage="No tags available. Create a tag first."
           />
         </div>
         <div className="w-44">

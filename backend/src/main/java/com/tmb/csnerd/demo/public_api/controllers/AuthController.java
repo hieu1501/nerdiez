@@ -3,7 +3,7 @@ package com.tmb.csnerd.demo.public_api.controllers;
 import com.tmb.csnerd.demo.domain.security.AuthProperties;
 import com.tmb.csnerd.demo.domain.services.auth.AuthService;
 import com.tmb.csnerd.demo.exceptions.auth.InvalidTokenException;
-import com.tmb.csnerd.demo.utils.AuthUtils;
+import com.tmb.csnerd.demo.domain.services.auth.AuthUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

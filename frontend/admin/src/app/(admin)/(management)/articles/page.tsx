@@ -7,6 +7,7 @@ import { ApiError } from "@/services/api";
 import { useToast } from "@/components/ui/toast/useToast";
 import ToastContainer from "@/components/ui/toast/Toast";
 import PageHeader from "@/components/management/PageHeader";
+import DeleteConfirmation from "@/components/management/DeleteConfirmation";
 import {
   Table,
   TableBody,
@@ -69,6 +70,7 @@ export default function ArticlesPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [data, setData] = useState<ArticlePage | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<ArticlePage["items"][number]["content"] | null>(null);
   const toast = useToast();
   const showError = toast.error;
 
@@ -95,19 +97,6 @@ export default function ArticlesPage() {
     fetchArticles();
   }, [fetchArticles]);
 
-  const handleDelete = async (id: number) => {
-    try {
-      await articlesService.delete(id);
-      if (data && data.items.length === 1 && page > 0) {
-        setPage((p) => p - 1);
-      } else {
-        await fetchArticles();
-      }
-    } catch {
-      toast.error("Failed to delete article. Check server connection.");
-    }
-  };
-
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -121,6 +110,21 @@ export default function ArticlesPage() {
   return (
     <div>
       <ToastContainer toasts={toast.toasts} onRemove={toast.remove} />
+      {deleting && (
+        <DeleteConfirmation
+          name={deleting.title}
+          onClose={() => setDeleting(null)}
+          onDelete={() => articlesService.delete(deleting.id)}
+          onDeleted={() => {
+            setDeleting(null);
+            if (data && data.items.length === 1 && page > 0) {
+              setPage((p) => p - 1);
+            } else {
+              void fetchArticles();
+            }
+          }}
+        />
+      )}
       <PageHeader
         title="Articles"
         onAdd={() => router.push("/articles/new")}
@@ -181,7 +185,7 @@ export default function ArticlesPage() {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(article.id)}
+                          onClick={() => setDeleting(article)}
                           className="text-error-500 hover:text-error-600 text-sm font-medium"
                         >
                           Delete

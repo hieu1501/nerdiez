@@ -1,25 +1,7 @@
 import { api } from "./api";
 
-export interface UserRefDTO {
-  username: string;
-}
-
-export interface CategoryAdminRefDTO {
-  categoryId: number;
-  name: string;
-  slugName: string;
-}
-
-export interface TopicAdminRefDTO {
-  topicId: number;
-  name: string;
-  slugName: string;
-}
-
-export interface PostVoteStatsDTO {
-  upvoteCount: number;
-  downvoteCount: number;
-}
+import { pageQuery, type UserRefDTO, type CategoryAdminRefDTO, type TagAdminRefDTO, type VoteStatsDTO, type PageResponse, type PageQuery } from "./content-types";
+export type { UserRefDTO, CategoryAdminRefDTO, PageResponse } from "./content-types";
 
 export interface AdminPostBriefContentDTO {
   id: number;
@@ -27,15 +9,16 @@ export interface AdminPostBriefContentDTO {
   title: string;
   author: UserRefDTO;
   category: CategoryAdminRefDTO;
-  topics: TopicAdminRefDTO[];
+  tags: TagAdminRefDTO[];
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
+  canonicalUri: string;
 }
 
 export interface AdminPostBriefDTO {
   content: AdminPostBriefContentDTO;
-  voteStats: PostVoteStatsDTO;
+  voteStats: VoteStatsDTO;
 }
 
 export interface AdminPostDetailContentDTO {
@@ -47,34 +30,21 @@ export interface AdminPostDetailContentDTO {
   category: CategoryAdminRefDTO;
   createdAt: string;
   updatedAt: string;
-  topics: TopicAdminRefDTO[];
+  tags: TagAdminRefDTO[];
   featuredImage: string | null;
   description: string | null;
   isActive: boolean;
+  canonicalUri: string;
 }
 
 export interface AdminPostDetailDTO {
   content: AdminPostDetailContentDTO;
-  voteStats: PostVoteStatsDTO;
-}
-
-export interface PageResponse<T> {
-  items: T[];
-  size: number;
-  offset: number;
-  totalItems: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
+  voteStats: VoteStatsDTO;
 }
 
 export type ArticlePage = PageResponse<AdminPostBriefDTO>;
 
-export interface ArticleQuery {
-  page?: number;
-  size?: number;
-  sort?: string;
-}
+export type ArticleQuery = PageQuery;
 
 export interface CreatePostRequestDTO {
   title: string;
@@ -82,17 +52,7 @@ export interface CreatePostRequestDTO {
   description?: string | null;
   featuredImage?: string | null;
   categoryId: number;
-  topicIds?: number[] | null;
-  isActive?: boolean | null;
-}
-
-export interface PutPostRequestDTO {
-  title: string;
-  content: string;
-  featuredImage?: string | null;
-  description?: string | null;
-  categoryId: number;
-  topicIds?: number[] | null;
+  tagIds: number[];
   isActive?: boolean | null;
 }
 
@@ -101,28 +61,18 @@ export interface PatchPostRequestDTO {
   content?: string;
   featuredImage?: string | null;
   description?: string | null;
-  categoryId?: number;
-  topicIds?: number[] | null;
+  tagIds?: number[] | null;
   isActive?: boolean | null;
 }
 
 export const articlesService = {
-  getAll: (params?: ArticleQuery) => {
-    const qs = new URLSearchParams();
-    if (params?.page !== undefined) qs.set("page", String(params.page));
-    if (params?.size !== undefined) qs.set("size", String(params.size));
-    if (params?.sort) qs.set("sort", params.sort);
-    const query = qs.toString();
-    return api.get<ArticlePage>(`/articles/all${query ? `?${query}` : ""}`, true);
-  },
+  getAll: (params?: ArticleQuery) =>
+    api.get<ArticlePage>(`/articles${pageQuery(params)}`, true),
 
   getById: (id: number) => api.get<AdminPostDetailDTO>(`/articles/${id}`, true),
 
   create: (data: CreatePostRequestDTO) =>
     api.post<AdminPostDetailDTO>("/articles", data, true),
-
-  update: (id: number, data: PutPostRequestDTO) =>
-    api.put<AdminPostDetailDTO>(`/articles/${id}`, data, true),
 
   patch: (id: number, data: PatchPostRequestDTO) =>
     api.patch<AdminPostDetailDTO>(`/articles/${id}`, data, true),

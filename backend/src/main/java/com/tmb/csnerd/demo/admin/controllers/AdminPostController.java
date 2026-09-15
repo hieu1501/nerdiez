@@ -8,9 +8,9 @@ import com.tmb.csnerd.demo.dto.common.ETagResponse;
 import com.tmb.csnerd.demo.dto.common.PageResponse;
 import com.tmb.csnerd.demo.dto.post.adminresponse.AdminPostBriefDTO;
 import com.tmb.csnerd.demo.dto.post.adminresponse.AdminPostDetailDTO;
-import com.tmb.csnerd.demo.dto.post.request.CreatePostRequestDTO;
-import com.tmb.csnerd.demo.dto.post.request.PatchPostRequestDTO;
-import com.tmb.csnerd.demo.dto.post.request.PutPostRequestDTO;
+import com.tmb.csnerd.demo.dto.post.request.AdminCreatePostRequestDTO;
+import com.tmb.csnerd.demo.dto.post.request.AdminPatchPostRequestDTO;
+import com.tmb.csnerd.demo.utils.PageableUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,30 +29,29 @@ import org.springframework.web.context.request.WebRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("admin/api/articles")
 @RequiredArgsConstructor
 public class AdminPostController {
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("createdAt", "updatedAt", "title");
+
     private final PostCommandService postCommandService;
     private final PostQueryService postQueryService;
     private final UserPrincipalService userPrincipalService;
-    final Set<String> allowedSortFields = Set.of("createdAt", "updatedAt", "title");
+    private final PageableUtils pageableUtils;
 
     @GetMapping(
-        path = "/all",
         produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE }
     )
     public ResponseEntity<PageResponse<AdminPostBriefDTO>> getAllAdminPostItems(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             WebRequest request) {
         Pageable safePageable = PageRequest.of(
-                getSafePageNumber(pageable.getPageNumber()),
-                getSafePageSize(pageable.getPageSize()),
-                getSafeSort(pageable.getSort())
+                pageableUtils.getSafePageNumber(pageable.getPageNumber()),
+                pageableUtils.getSafePageSize(pageable.getPageSize(), 100),
+                pageableUtils.getSafeSort(pageable.getSort(), ALLOWED_SORT_FIELDS, "id")
         );
         ETagResponse<Page<AdminPostBriefDTO>> allPostsPage = postQueryService.getPostsForAdmin(safePageable);
         String eTag = allPostsPage.eTag();
@@ -87,55 +86,29 @@ public class AdminPostController {
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE }
     )
-    public ResponseEntity<AdminPostDetailDTO> addPost(@Valid @RequestBody CreatePostRequestDTO request, @AuthenticationPrincipal Jwt jwt) throws URISyntaxException {
+    public ResponseEntity<AdminPostDetailDTO> addPost(@Valid @RequestBody AdminCreatePostRequestDTO request, @AuthenticationPrincipal Jwt jwt) throws URISyntaxException {
         UserPrincipal userPrincipal = userPrincipalService.convertJwtToUserPrincipal(jwt);
         AdminPostDetailDTO post = postCommandService.createPostForAdmin(request, userPrincipal);
         URI postLocation = new URI("admin/api/articles/" + post.content().id());
         return ResponseEntity.created(postLocation).body(post);
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<AdminPostDetailDTO> patchPost(@PathVariable Long id, @Valid @RequestBody PatchPostRequestDTO request, @AuthenticationPrincipal Jwt jwt) {
+    @PatchMapping(
+        path ="/{id}",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE }
+    )
+    public ResponseEntity<AdminPostDetailDTO> patchPost(@PathVariable Long id, @Valid @RequestBody AdminPatchPostRequestDTO request, @AuthenticationPrincipal Jwt jwt) {
         UserPrincipal userPrincipal = userPrincipalService.convertJwtToUserPrincipal(jwt);
-        AdminPostDetailDTO post = postCommandService.patchPostForAdmin(id, request, userPrincipal);
+        AdminPostDetailDTO post = postCommandService.patchPostById(id, request, userPrincipal);
         return ResponseEntity.ok(post);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<AdminPostDetailDTO> putPost(@PathVariable Long id, @Valid @RequestBody PutPostRequestDTO request, @AuthenticationPrincipal Jwt jwt) {
-        UserPrincipal userPrincipal = userPrincipalService.convertJwtToUserPrincipal(jwt);
-        AdminPostDetailDTO post = postCommandService.putPostForAdmin(id, request, userPrincipal);
-        return ResponseEntity.ok(post);
-    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
         UserPrincipal userPrincipal = userPrincipalService.convertJwtToUserPrincipal(jwt);
-        postCommandService.deactivatePostForAdmin(id, userPrincipal);
+        postCommandService.hardDeletePostById(id, userPrincipal);
         return ResponseEntity.noContent().build();
-    }
-
-    private Integer getSafePageNumber(Integer pageNumber) {
-        return Math.max(pageNumber, 0);
-    }
-
-    private Integer getSafePageSize(Integer pageSize) {
-        return Math.clamp(pageSize, 1, 100);
-    }
-
-    private Sort getSafeSort(Sort sort) {
-        if (sort.isUnsorted()) {
-            return Sort.by(Sort.Direction.DESC, "createdAt");
-        }
-        List<Sort.Order> validOrders = sort.stream()
-                .filter(order -> allowedSortFields.contains(order.getProperty()))
-                .toList();
-
-        if (validOrders.size() != sort.stream().count()) {
-            throw new IllegalArgumentException(
-                    sort.stream().map(Sort.Order::getProperty).filter(p -> !allowedSortFields.contains(p)).collect(Collectors.joining(", "))
-            );
-        }
-        return Sort.by(validOrders);
     }
 }

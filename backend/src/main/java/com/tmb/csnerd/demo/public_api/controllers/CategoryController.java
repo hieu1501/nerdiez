@@ -21,7 +21,6 @@ public class CategoryController {
     private final CategoryQueryService categoryQueryService;
 
     @GetMapping(
-        path="/all",
         produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE }
     )
     public ResponseEntity<List<CategoryPublicDetailDTO>> getAllCategoriesForPublic(WebRequest request) {

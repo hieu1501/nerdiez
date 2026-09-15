@@ -13,18 +13,12 @@ import java.util.List;
 public interface ImageRepository extends JpaRepository<Image, Long> {
     @Query("""
         SELECT i.path FROM Image i
-        WHERE i.post IS NOT NULL AND i.post.id = :postId
-    """)
-    List<String> findImagePathsByPostId(@Param("postId") Long postId);
-
-    @Query("""
-        SELECT i.path FROM Image i
     """)
     List<String> getAllImagePaths();
 
     @Query("""
         SELECT i FROM Image i
-        WHERE i.post IS NULL /* AND DATEDIFF(:now, i.createdAt) >= 1 */
+        WHERE i.useCount = 0 /* AND DATEDIFF(:now, i.createdAt) >= 1 */
     """)
     List<Image> findStaleImages(@Param("now") Instant now);
 
@@ -38,16 +32,16 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     @Modifying
     @Query("""
         UPDATE Image i
-        SET i.post = :post
+        SET i.useCount = i.useCount + 1
         WHERE i.path IN (:imagePaths)
     """)
-    int linkImagesToPostId(@Param("imagePaths") List<String> imagePaths, @Param("post") Post post);
+    int setImagesInUse(@Param("imagePaths") List<String> imagePaths);
 
     @Modifying
     @Query("""
         UPDATE Image i
-        SET i.post = NULL
+        SET i.useCount = GREATEST(0, i.useCount - 1)
         WHERE i.path IN (:imagePaths)
     """)
-    int unlinkImagesFromPaths(@Param("imagePaths") List<String> imagePaths);
+    int setImagesNotInUse(@Param("imagePaths") List<String> imagePaths);
 }

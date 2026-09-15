@@ -4,6 +4,7 @@ import java.time.Instant;
 
 public interface PublicPostBriefContentProjection {
     Long getId();
+    String getPublicUri();
     String getSlug();
     String getTitle();
     String getAuthorName();
@@ -11,4 +12,5 @@ public interface PublicPostBriefContentProjection {
     String getCategorySlug();
     Instant getCreatedAt();
     Instant getUpdatedAt();
+    String getFeaturedImage();
 }

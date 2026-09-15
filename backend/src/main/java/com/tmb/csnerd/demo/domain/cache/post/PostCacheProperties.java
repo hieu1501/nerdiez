@@ -8,5 +8,6 @@ public record PostCacheProperties(
     CachePolicy adminBrief,
     CachePolicy publicBrief,
     CachePolicy adminDetail,
-    CachePolicy publicDetail
+    CachePolicy publicDetail,
+    CachePolicy vote
 ) { }

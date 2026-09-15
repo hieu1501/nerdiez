@@ -1,13 +1,12 @@
 package com.tmb.csnerd.demo.dto.post.adminresponse;
 
-import com.tmb.csnerd.demo.dto.post.PostVoteStatsDTO;
-import com.tmb.csnerd.demo.dto.post.publicresponse.PublicPostBriefContentDTO;
+import com.tmb.csnerd.demo.dto.VoteStatsDTO;
 
 public record AdminPostBriefDTO(
     AdminPostBriefContentDTO content,
-    PostVoteStatsDTO voteStats
+    VoteStatsDTO voteStats
 ) {
-    public static AdminPostBriefDTO from(AdminPostBriefContentDTO content, PostVoteStatsDTO voteStats) {
+    public static AdminPostBriefDTO from(AdminPostBriefContentDTO content, VoteStatsDTO voteStats) {
         return new AdminPostBriefDTO(content, voteStats);
     }
 }

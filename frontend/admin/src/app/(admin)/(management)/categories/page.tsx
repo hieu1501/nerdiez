@@ -6,6 +6,7 @@ import { ApiError } from "@/services/api";
 import { useToast } from "@/components/ui/toast/useToast";
 import ToastContainer from "@/components/ui/toast/Toast";
 import PageHeader from "@/components/management/PageHeader";
+import DeleteConfirmation from "@/components/management/DeleteConfirmation";
 import VisibilitySaveConfirmation from "@/components/management/VisibilitySaveConfirmation";
 import { Modal } from "@/components/ui/modal";
 import Label from "@/components/form/Label";
@@ -32,6 +33,7 @@ interface PendingCategorySave {
 export default function CategoriesPage() {
   const [items, setItems] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<Category | null>(null);
   const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
@@ -94,14 +96,6 @@ export default function CategoriesPage() {
     setEditIsActive(item.isActive);
     setModalOpen(true);
   };
-  const handleDelete = async (categoryId: number) => {
-    try {
-      await categoriesService.delete(categoryId);
-      await fetch();
-    } catch {
-      toast.error("Failed to delete category.");
-    }
-  };
   const cancelConfirmation = () => {
     if (!saving) setPendingSave(null);
   };
@@ -118,6 +112,17 @@ export default function CategoriesPage() {
   return (
     <div>
       <ToastContainer toasts={toast.toasts} onRemove={toast.remove} />
+      {deleting && (
+        <DeleteConfirmation
+          name={deleting.name}
+          onClose={() => setDeleting(null)}
+          onDelete={() => categoriesService.delete(deleting.categoryId)}
+          onDeleted={() => {
+            setDeleting(null);
+            void fetch();
+          }}
+        />
+      )}
       <PageHeader title="Categories" onAdd={() => { setEditing(null); setModalOpen(true); }} addLabel="Add Category" />
       <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         {loading ? (
@@ -150,7 +155,7 @@ export default function CategoriesPage() {
                     <TableCell className="px-4 py-3 text-end">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => handleEdit(item)} className="text-brand-500 hover:text-brand-600 text-sm font-medium">Edit</button>
-                        <button onClick={() => handleDelete(item.categoryId)} className="text-error-500 hover:text-error-600 text-sm font-medium">Delete</button>
+                        <button onClick={() => setDeleting(item)} className="text-error-500 hover:text-error-600 text-sm font-medium">Delete</button>
                       </div>
                     </TableCell>
                   </TableRow>

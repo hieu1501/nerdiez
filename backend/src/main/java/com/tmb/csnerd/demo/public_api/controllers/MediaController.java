@@ -1,6 +1,6 @@
 package com.tmb.csnerd.demo.public_api.controllers;
 
-import com.tmb.csnerd.demo.utils.MediaUtils;
+import com.tmb.csnerd.demo.domain.services.media.MediaUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;

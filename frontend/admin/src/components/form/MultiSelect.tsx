@@ -26,7 +26,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   defaultSelected = [],
   onChange,
   disabled = false,
-  placeholder = "Select topics...",
+  placeholder = "Select options...",
   emptyMessage = "No results",
 }) => {
   const [internalSelectedOptions, setInternalSelectedOptions] =
@@ -225,7 +225,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search topics..."
+                placeholder="Search options..."
                 className="w-full rounded-md border border-gray-300 bg-transparent px-3 py-1.5 text-sm text-gray-800 placeholder:text-gray-400 outline-hidden transition focus:border-brand-300 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/50 dark:focus:border-brand-300"
               />
             </div>

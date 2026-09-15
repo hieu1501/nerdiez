@@ -1,6 +1,6 @@
 package com.tmb.csnerd.demo.domain.services.storage;
 
-import com.tmb.csnerd.demo.utils.MediaUtils;
+import com.tmb.csnerd.demo.domain.services.media.MediaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

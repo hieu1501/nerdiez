@@ -1,10 +1,13 @@
 package com.tmb.csnerd.demo.domain.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -26,10 +29,17 @@ public class Post {
     @Column(name = "id")
     private Long id;
 
+    @Size(max = 300)
+    @NotNull
+    @Column(name = "public_uri", nullable = false, length = 300)
+    private String publicUri;
+
     @Column(name = "title")
     private String title;
 
-    @Column(name = "slug")
+    @Size(max = 255)
+    @NotNull
+    @Column(name = "slug", nullable = false)
     private String slug;
 
     @Column(name = "content")
@@ -59,11 +69,11 @@ public class Post {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "posts_topics",
+        name = "posts_tags",
         joinColumns = @JoinColumn(name = "post_id"),
-        inverseJoinColumns = @JoinColumn(name = "topic_id")
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
-    private Set<Topic> topics;
+    private Set<Tag> tags;
 
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "post")
     private PostMetadata postMetadata;
@@ -73,20 +83,4 @@ public class Post {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PostsVote> votes;
-
-    public Set<Long> getTopicIds() {
-        if (topics == null) return Set.of();
-        return topics.stream().map(Topic::getId).collect(Collectors.toSet());
-    }
-
-    public void addTopic(Topic topic) {
-        if (topics == null) topics = new HashSet<>();
-        topics.add(topic);
-        topic.addPost(this);
-    }
-
-    public void removeTopic(Topic topic) {
-        if (topics !=  null) topics.remove(topic);
-        topic.removePost(this);
-    }
 }

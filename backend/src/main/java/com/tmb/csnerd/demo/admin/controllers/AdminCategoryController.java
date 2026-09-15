@@ -3,7 +3,6 @@ package com.tmb.csnerd.demo.admin.controllers;
 import com.tmb.csnerd.demo.domain.services.category.CategoryQueryService;
 import com.tmb.csnerd.demo.dto.category.adminresponse.CategoryAdminDetailDTO;
 import com.tmb.csnerd.demo.dto.category.request.CreateCategoryRequestDTO;
-import com.tmb.csnerd.demo.dto.category.request.ReplaceCategoryRequestDTO;
 import com.tmb.csnerd.demo.dto.category.request.UpdateCategoryRequestDTO;
 import com.tmb.csnerd.demo.domain.services.category.CategoryCommandService;
 import com.tmb.csnerd.demo.dto.common.ETagResponse;
@@ -50,14 +49,6 @@ public class AdminCategoryController {
         return ResponseEntity.ok(categoryAdminDetailDTO);
     }
 
-    @PutMapping(
-        path = "/{id}",
-        consumes = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<CategoryAdminDetailDTO> putCategory(@PathVariable Long id, @Valid @RequestBody ReplaceCategoryRequestDTO replaceCategoryRequestDTO) {
-        CategoryAdminDetailDTO categoryAdminDetailDTO = categoryCommandService.putCategory(id, replaceCategoryRequestDTO);
-        return ResponseEntity.ok(categoryAdminDetailDTO);
-    }
 
     @PatchMapping(
         path = "/{id}",
@@ -70,7 +61,7 @@ public class AdminCategoryController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
-        categoryCommandService.deleteCategory(id);
+        categoryCommandService.softDeleteCategory(id);
         return ResponseEntity.ok().build();
     }
 }

@@ -16,6 +16,7 @@ import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -45,23 +46,31 @@ public class ImageService {
     }
 
     @Transactional
-    public void setImagesLinkedToPost(List<String> imagePaths, Post post) {
+    public void setImagesInUse(Set<String> imagePaths) {
         int count = 0;
         if (!imagePaths.isEmpty()) {
-            count = imageRepository.linkImagesToPostId(imagePaths, post);
+            count = imageRepository.setImagesInUse(List.copyOf(imagePaths));
         }
-        logger.debug("setImagesLinkedToPost count={}", count);
+        logger.debug("setImagesInUse count={}", count);
     }
 
     @Transactional
-    public void updateImagesLinkedToPost(List<String> newImagePaths, Post post) {
-        List<String> currentImagePaths = imageRepository.findImagePathsByPostId(post.getId());
+    public void setImagesNotInUse(Set<String> imagePaths) {
+        int count = 0;
+        if (!imagePaths.isEmpty()) {
+            count = imageRepository.setImagesNotInUse(List.copyOf(imagePaths));
+        }
+        logger.debug("setImagesNotInUse count={}", count);
+    }
+
+    @Transactional
+    public void updateImagesUseCount(Set<String> newImagePaths, Set<String> currentImagePaths) {
         List<String> imagePathsToAdd = new ArrayList<>(newImagePaths);
         imagePathsToAdd.removeAll(currentImagePaths);
         List<String> imagePathsToRemove = new ArrayList<>(currentImagePaths);
         imagePathsToRemove.removeAll(newImagePaths);
-        int newCount =  imageRepository.linkImagesToPostId(imagePathsToAdd, post);
-        int deleteCount = imageRepository.unlinkImagesFromPaths(imagePathsToRemove);
+        int newCount = imageRepository.setImagesInUse(imagePathsToAdd);
+        int deleteCount = imageRepository.setImagesNotInUse(imagePathsToRemove);
         logger.debug("updateImagesLinkedToPost newCount={}", newCount);
         logger.debug("updateImagesLinkedToPost deleteCount={}", deleteCount);
     }

@@ -5,7 +5,7 @@ import com.tmb.csnerd.demo.domain.security.UserPrincipal;
 import com.tmb.csnerd.demo.domain.models.RefreshToken;
 import com.tmb.csnerd.demo.domain.repositories.auth.RefreshTokenRepository;
 import com.tmb.csnerd.demo.exceptions.auth.InvalidTokenException;
-import com.tmb.csnerd.demo.utils.AuthUtils;
+import com.tmb.csnerd.demo.domain.services.auth.AuthUtils;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;

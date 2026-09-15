@@ -6,6 +6,7 @@ import { ApiError } from "@/services/api";
 import { useToast } from "@/components/ui/toast/useToast";
 import ToastContainer from "@/components/ui/toast/Toast";
 import PageHeader from "@/components/management/PageHeader";
+import DeleteConfirmation from "@/components/management/DeleteConfirmation";
 import { Modal } from "@/components/ui/modal";
 import Form from "@/components/form/Form";
 import Label from "@/components/form/Label";
@@ -31,6 +32,7 @@ const roles = [
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<User | null>(null);
   const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
@@ -82,15 +84,6 @@ export default function UsersPage() {
     setModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await usersService.delete(id);
-      setUsers((prev) => prev.filter((u) => u.id !== id));
-    } catch {
-      toast.error("Failed to delete user. Check server connection.");
-    }
-  };
-
   const closeModal = () => {
     setModalOpen(false);
     setEditing(null);
@@ -102,6 +95,17 @@ export default function UsersPage() {
   return (
     <div>
       <ToastContainer toasts={toast.toasts} onRemove={toast.remove} />
+      {deleting && (
+        <DeleteConfirmation
+          name={deleting.name}
+          onClose={() => setDeleting(null)}
+          onDelete={() => usersService.delete(deleting.id)}
+          onDeleted={() => {
+            setDeleting(null);
+            setUsers((prev) => prev.filter((u) => u.id !== deleting.id));
+          }}
+        />
+      )}
       <PageHeader title="Users" onAdd={() => { setEditing(null); setModalOpen(true); }} addLabel="Add User" />
       <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         {loading ? (
@@ -136,7 +140,7 @@ export default function UsersPage() {
                     <TableCell className="px-4 py-3 text-end">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => handleEdit(user)} className="text-brand-500 hover:text-brand-600 text-sm font-medium">Edit</button>
-                        <button onClick={() => handleDelete(user.id)} className="text-error-500 hover:text-error-600 text-sm font-medium">Delete</button>
+                        <button onClick={() => setDeleting(user)} className="text-error-500 hover:text-error-600 text-sm font-medium">Delete</button>
                       </div>
                     </TableCell>
                   </TableRow>

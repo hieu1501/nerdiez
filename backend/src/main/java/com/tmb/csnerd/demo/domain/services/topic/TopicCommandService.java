@@ -1,119 +1,86 @@
 package com.tmb.csnerd.demo.domain.services.topic;
-
-import com.tmb.csnerd.demo.domain.cache.post.PostListChangedEvent;
-import com.tmb.csnerd.demo.domain.cache.topic.TopicChangedEvent;
-import com.tmb.csnerd.demo.domain.models.Category;
-import com.tmb.csnerd.demo.domain.services.category.CategoryQueryService;
-import com.tmb.csnerd.demo.domain.services.post.PostQueryService;
-import com.tmb.csnerd.demo.dto.topic.request.CreateTopicRequestDTO;
-import com.tmb.csnerd.demo.dto.topic.request.ReplaceTopicRequestDTO;
-import com.tmb.csnerd.demo.dto.topic.adminresponse.TopicAdminDetailDTO;
-import com.tmb.csnerd.demo.dto.topic.request.UpdateTopicRequestDTO;
-import com.tmb.csnerd.demo.exceptions.ConflictStatusException;
-import com.tmb.csnerd.demo.exceptions.topic.TopicNotFoundException;
 import com.tmb.csnerd.demo.domain.models.Topic;
-import com.tmb.csnerd.demo.domain.repositories.post.PostRepository;
 import com.tmb.csnerd.demo.domain.repositories.topic.TopicRepository;
-import com.tmb.csnerd.demo.utils.SlugifyUtils;
-import jakarta.transaction.Transactional;
+import com.tmb.csnerd.demo.domain.security.UserPrincipal;
+import com.tmb.csnerd.demo.domain.services.publicuri.PublicKeyGenerator;
+import com.tmb.csnerd.demo.domain.services.publicuri.PublicResourceUriFactory;
+import com.tmb.csnerd.demo.dto.topic.adminresponse.TopicAdminDetailDTO;
+import com.tmb.csnerd.demo.dto.topic.publicresponse.TopicPersonalDetailDTO;
+import com.tmb.csnerd.demo.dto.topic.request.AdminCreateTopicRequestDTO;
+import com.tmb.csnerd.demo.dto.topic.request.AdminPatchTopicRequestDTO;
+import com.tmb.csnerd.demo.dto.topic.request.PublicCreateTopicRequestDTO;
+import com.tmb.csnerd.demo.dto.topic.request.PublicPatchTopicRequestDTO;
+import com.tmb.csnerd.demo.exceptions.topic.TopicByPublicUriNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.context.ApplicationEventPublisher;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Set;
+import java.net.URI;
 
 @RequiredArgsConstructor
 @Service
 public class TopicCommandService {
+    private static final int MAX_PUBLIC_URI_ATTEMPTS = 3;
+
+    private final PublicKeyGenerator publicKeyGenerator;
+    private final TopicTransactionalService topicTransactionalService;
+    private final PublicResourceUriFactory publicResourceUriFactory;
     private final TopicRepository topicRepository;
-    private final CategoryQueryService categoryQueryService;
-    private final ApplicationEventPublisher eventPublisher;
-    private final PostQueryService postQueryService;
 
-    @Transactional
-    public TopicAdminDetailDTO createTopic(CreateTopicRequestDTO request) {
-        Category category = categoryQueryService.getCategoryById(request.categoryId());
-        Topic topic = new Topic();
-        topic.setName(request.name());
-        topic.setSlugName(SlugifyUtils.slugify(request.name()));
-        topic.setDescription(request.description());
-        topic.setCategory(category);
-        if (request.isActive() != null) topic.setIsActive(request.isActive());
-        topic = topicRepository.save(topic);
-        eventPublisher.publishEvent(new TopicChangedEvent());
-        return TopicAdminDetailDTO.from(topic);
+    public TopicAdminDetailDTO createTopicForAdmin(AdminCreateTopicRequestDTO request, UserPrincipal userPrincipal) {
+        Topic topic = createTopic(request, userPrincipal);
+        URI canonicalUri = publicResourceUriFactory.topic(topic.getPublicUri(), false);
+        return TopicAdminDetailDTO.from(topic, canonicalUri);
     }
 
-    @Transactional
-    public TopicAdminDetailDTO patchTopic(Long topicId, UpdateTopicRequestDTO request) {
-        Topic topic = topicRepository.findById(topicId)
-                .orElseThrow(() -> new TopicNotFoundException(topicId));
-        modifyTopicIfChanged(topic, request.name(), request.description(), request.categoryId(), request.isActive());
-        topic = topicRepository.save(topic);
-        List<Long> modifiedPostIds = postQueryService.getPostIdsByTopicId(topicId);
-        if (!modifiedPostIds.isEmpty()) {
-            Set<Long> stalePostIds = Set.copyOf(modifiedPostIds);
-            eventPublisher.publishEvent(new PostListChangedEvent(stalePostIds));
-        }
-        eventPublisher.publishEvent(new TopicChangedEvent());
-        return TopicAdminDetailDTO.from(topic);
+    public TopicPersonalDetailDTO createTopicForProfile(PublicCreateTopicRequestDTO request, UserPrincipal userPrincipal) {
+        Topic topic = draftTopic(request, userPrincipal);
+        URI canonicalUri = publicResourceUriFactory.topic(topic.getPublicUri(), true);
+        return TopicPersonalDetailDTO.from(topic, canonicalUri);
     }
 
-    @Transactional
-    public TopicAdminDetailDTO putTopic(Long topicId, ReplaceTopicRequestDTO request) {
-        Topic topic = topicRepository.findById(topicId)
-                .orElse(null);
-        if (topic == null) {
-            topic = new Topic();
-        }
-        modifyTopicIfChanged(topic, request.name(), request.description(), request.categoryId(), request.isActive());
-        topic = topicRepository.save(topic);
-        List<Long> modifiedPostIds = postQueryService.getPostIdsByTopicId(topicId);
-        if (!modifiedPostIds.isEmpty()) {
-            Set<Long> stalePostIds = Set.copyOf(modifiedPostIds);
-            eventPublisher.publishEvent(new PostListChangedEvent(stalePostIds));
-        }
-        eventPublisher.publishEvent(new TopicChangedEvent());
-        return TopicAdminDetailDTO.from(topic);
+    public TopicAdminDetailDTO patchTopicById(Long id, AdminPatchTopicRequestDTO request, UserPrincipal userPrincipal) {
+        Topic topic = topicTransactionalService.patchTopicForAdminTransactional(id, request, userPrincipal);
+        URI publicUri = publicResourceUriFactory.topic(topic.getPublicUri(), false);
+        return TopicAdminDetailDTO.from(topic, publicUri);
     }
 
-    @Transactional
-    public void deleteTopic(Long topicId) {
-        Topic topic = topicRepository.findById(topicId)
-            .orElseThrow(() -> new TopicNotFoundException(topicId));
-        if (postQueryService.existsActiveByTopicId(topicId)) {
-            throw new ConflictStatusException("Topic is used by active posts");
-        }
-        topic.setIsActive(false);
-        topicRepository.save(topic);
-        List<Long> modifiedPostIds = postQueryService.getPostIdsByTopicId(topicId);
-        if (!modifiedPostIds.isEmpty()) {
-            Set<Long> stalePostIds = Set.copyOf(modifiedPostIds);
-            eventPublisher.publishEvent(new PostListChangedEvent(stalePostIds));
-        }
-        eventPublisher.publishEvent(new TopicChangedEvent());
+    public TopicPersonalDetailDTO patchTopicByPublicUri(String publicUri, PublicPatchTopicRequestDTO request, UserPrincipal userPrincipal) {
+        Long id = topicRepository.getActiveTopicIdByPublicUri(publicUri).orElseThrow(() -> new TopicByPublicUriNotFoundException(publicUri));
+        Topic topic = topicTransactionalService.patchTopicForPublicTransactional(id, request, userPrincipal);
+        URI canonicalUri = publicResourceUriFactory.topic(topic.getPublicUri(), true);
+        return TopicPersonalDetailDTO.from(topic, canonicalUri);
     }
 
-    private void modifyTopicIfChanged(Topic topic, String newName, String newDescription, Long newCategoryId, Boolean newIsActive) {
-        if (topic.getName() == null || (!newName.isBlank() && !topic.getName().equals(newName))) {
-            topic.setName(newName);
-            topic.setSlugName(SlugifyUtils.slugify(newName));
-        }
-        if (topic.getDescription() == null || !topic.getDescription().equals(newDescription)) {
-            if (newDescription.isBlank()) {
-                topic.setDescription(null);
-            } else {
-                topic.setDescription(newDescription);
+    public void hardDeleteTopic(Long id, UserPrincipal userPrincipal) {
+        topicTransactionalService.hardDeleteTopicTransactional(id, userPrincipal);
+    }
+
+    public void hardDeleteTopic(String publicUri, UserPrincipal userPrincipal) {
+        Long id = topicRepository.getActiveTopicIdByPublicUri(publicUri).orElseThrow(() -> new TopicByPublicUriNotFoundException(publicUri));
+        topicTransactionalService.hardDeleteTopicTransactional(id, userPrincipal);
+    }
+
+    private Topic createTopic(AdminCreateTopicRequestDTO request, UserPrincipal userPrincipal) {
+        for (int attempt = 0; attempt < MAX_PUBLIC_URI_ATTEMPTS; attempt++) {
+            try {
+                return topicTransactionalService.createTopicTransactional(request, publicKeyGenerator.generate(), userPrincipal);
+            } catch (DataIntegrityViolationException | ConstraintViolationException exception) {
+                continue;
             }
         }
-        if (topic.getCategory() == null || !topic.getCategory().getId().equals(newCategoryId)) {
-            Category category = categoryQueryService.getCategoryById(newCategoryId);
-            topic.setCategory(category);
+        throw new IllegalStateException("Unable to generate a unique Topic public URI");
+    }
+
+    private Topic draftTopic(PublicCreateTopicRequestDTO request, UserPrincipal userPrincipal) {
+        for (int attempt = 0; attempt < MAX_PUBLIC_URI_ATTEMPTS; attempt++) {
+            try {
+                return topicTransactionalService.draftTopicTransactional(request, publicKeyGenerator.generate(), userPrincipal);
+            } catch (DataIntegrityViolationException | ConstraintViolationException exception) {
+                continue;
+            }
         }
-        if (newIsActive != null && !topic.getIsActive().equals(newIsActive)) {
-            topic.setIsActive(newIsActive);
-        }
+        throw new IllegalStateException("Unable to generate a unique Topic public URI");
     }
 }

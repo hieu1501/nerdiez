@@ -14,55 +14,69 @@ import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
     // BEGIN - QUERIES FOR PUBLIC
-
     @Query("""
-        SELECT p.id FROM Post p
-        LEFT JOIN p.category c
-        WHERE p.isActive = true AND c.slugName = :categorySlug
+        SELECT p.id
+        FROM Post p
+        JOIN p.category c
+        WHERE p.isActive = true
+            AND c.isActive = true
+            AND c.slugName = :categorySlug
     """)
     Slice<Long> getActivePostIdsSliceByCategorySlug(@Param("categorySlug") String categorySlug, Pageable pageable);
 
     @Query("""
-        SELECT p.id FROM Post p
-        LEFT JOIN p.category c
-        WHERE p.isActive = true AND c.slugName = :categorySlug and p.slug = :slugName
+        SELECT p.id
+        FROM Post p
+        JOIN p.author u
+        WHERE u.id = :userId
     """)
-    Optional<Long> getActivePostIdByCategoryAndSlugName(@Param("categorySlug") String categorySlug, @Param("slugName") String slugName);
+    Slice<Long> getPostIdsSliceForProfile(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+        SELECT p.id FROM Post p
+        JOIN p.category c
+        WHERE p.isActive = true
+            AND c.isActive = true
+            AND p.publicUri = :publicUri
+    """)
+    Optional<Long> getActivePostIdByPublicUri(@Param("publicUri") String publicUri);
+
+    @Query("""
+        SELECT p.id FROM Post p
+        JOIN p.category c
+        JOIN p.author u
+        WHERE c.isActive = true
+            AND u.id = :userId
+            AND p.publicUri = :publicUri
+    """)
+    Optional<Long> getPostIdForProfileByPublicUri(@Param("publicUri") String publicUri, @Param("userId") Long userId);
 
     @Query("""
         SELECT
             p.id AS id,
+            p.publicUri AS publicUri,
             p.slug AS slug,
             p.title AS title,
             a.username AS authorName,
             c.name AS categoryName,
             c.slugName AS categorySlug,
             p.createdAt AS createdAt,
-            p.updatedAt AS updatedAt
+            p.updatedAt AS updatedAt,
+            p.featuredImage AS featuredImage
         FROM Post p
         JOIN p.author a
         JOIN p.category c
         JOIN p.postMetadata m
         WHERE p.id IN :ids
+            AND p.isActive = true
+            AND c.isActive = true
     """)
     List<PublicPostBriefContentProjection> getPostInformationByIds(@Param("ids") List<Long> ids);
 
     @Query("""
         SELECT
-            p.id AS postId,
-            m.upvoteCount AS upvoteCount,
-            m.downvoteCount AS downvoteCount,
-            m.voteVersion AS voteVersion
-        FROM Post p
-        JOIN p.postMetadata m
-        JOIN p.category c
-        WHERE p.slug = :slugName AND c.slugName = :categorySlug
-    """)
-    Optional<PostVotesInformationProjection> getPostVoteInformationByCategorySlugAndSlugName(@Param("categorySlug") String categorySlug, @Param("slugName") String slugName);
-
-    @Query("""
-        SELECT
             p.id AS id,
+            p.publicUri AS publicUri,
             p.slug AS slug,
             p.title AS title,
             p.content AS content,
@@ -76,16 +90,52 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         FROM Post p
         JOIN p.author a
         JOIN p.category c
-        LEFT JOIN p.votes v
         WHERE p.id = :postId
         AND p.isActive = true
     """)
     Optional<PublicPostDetailContentProjection> getActivePostContentById(@Param("postId") Long postId);
 
+    @Query("""
+        SELECT
+            p.id AS id,
+            p.publicUri AS publicUri,
+            p.slug AS slug,
+            p.title AS title,
+            c.name AS categoryName,
+            c.slugName AS categorySlug,
+            p.createdAt AS createdAt,
+            p.updatedAt AS updatedAt,
+            p.featuredImage AS featuredImage,
+            p.isActive as isActive
+        FROM Post p
+        JOIN p.category c
+        JOIN p.postMetadata m
+        WHERE p.id IN :ids
+    """)
+    List<PersonalPostBriefContentProjection> getPostInformationForProfileByIds(@Param("ids") List<Long> ids);
+
+    @Query("""
+        SELECT
+            p.id AS id,
+            p.publicUri AS publicUri,
+            p.slug AS slug,
+            p.title AS title,
+            p.content AS content,
+            c.name AS categoryName,
+            c.slugName AS categorySlug,
+            p.createdAt AS createdAt,
+            p.updatedAt AS updatedAt,
+            p.featuredImage AS featuredImage,
+            p.description AS description,
+            p.isActive AS isActive
+        FROM Post p
+        JOIN p.category c
+        WHERE p.id = :postId
+    """)
+    Optional<PersonalPostDetailContentProjection> getPersonalContentByPostId(@Param("postId") Long postId);
     // END
 
     // BEGIN - QUERIES FOR ADMIN
-
     @Query(value = """
         SELECT p.id FROM Post p
     """, countQuery = "SELECT COUNT(p) FROM Post p")
@@ -94,6 +144,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("""
         SELECT
             p.id AS id,
+            p.publicUri AS publicUri,
             p.slug AS slug,
             p.title AS title,
             a.username AS authorName,
@@ -114,6 +165,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("""
         SELECT
             p.id AS id,
+            p.publicUri AS publicUri,
             p.slug AS slug,
             p.title AS title,
             p.content AS content,
@@ -132,34 +184,43 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         WHERE p.id = :postId
     """)
     Optional<AdminPostDetailContentProjection> getPostContentByPostId(@Param("postId") Long postId);
-
     // END
+
+    @Query("""
+        SELECT DISTINCT p
+        FROM Post p
+        JOIN FETCH p.category
+        JOIN FETCH p.author
+        LEFT JOIN FETCH p.tags
+        WHERE p.id = :postId
+    """)
+    Optional<Post> getPostByPostId(@Param("postId") Long postId);
+
     @Query("""
         SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
         FROM Post p
         WHERE p.category.id = :categoryId
-          AND p.isActive = true
     """)
-    boolean existsActiveByCategoryId(@Param("categoryId") Long categoryId);
+    boolean existsPostByCategoryId(@Param("categoryId") Long categoryId);
 
     @Query("""
         SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
         FROM Post p
-        JOIN p.topics t
-        WHERE t.id = :topicId
+        JOIN p.tags t
+        WHERE t.id = :tagId
           AND p.isActive = true
     """)
-    boolean existsActiveByTopicId(@Param("topicId") Long topicId);
+    boolean existsActiveByTagId(@Param("tagId") Long tagId);
 
 
     @Query("""
-        SELECT p.id AS postId, t.id AS topicId, t.name AS topicName, t.slugName AS topicSlug
+        SELECT p.id AS postId, t.id AS tagId, t.slug AS tagSlug
         FROM Post p
-        JOIN p.topics t
+        JOIN p.tags t
         WHERE p.id IN (:postIds)
-        ORDER BY t.slugName
+        ORDER BY t.slug
     """)
-    List<PostTopicsProjection> getTopicsByPostIdsSortedBySlugName(@Param("postIds") List<Long> postIds);
+    List<PostTagsProjection> getTagsByPostIdsSortedBySlugName(@Param("postIds") List<Long> postIds);
 
     @Query("""
         SELECT p.id
@@ -172,16 +233,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("""
         SELECT p.id
         FROM Post p
-        JOIN p.topics t
-        WHERE t.id = :topicId
+        JOIN p.tags t
+        WHERE t.id = :tagId
     """)
-    List<Long> getPostIdsByTopicId(@Param("topicId") Long topicId);
-
-    @Query("""
-        SELECT p.id
-        FROM Post p
-        JOIN p.category c
-        WHERE p.slug = :postSlug AND p.category.slugName = :categorySlug
-    """)
-    Optional<Long> getPostIdByCategorySlugAndPostSlug(@Param("categorySlug") String categorySlug, @Param("postSlug") String postSlug);
+    List<Long> getPostIdsByTagId(@Param("tagId") Long tagId);
 }

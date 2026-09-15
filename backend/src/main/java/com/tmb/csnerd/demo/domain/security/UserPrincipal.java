@@ -44,4 +44,13 @@ public class UserPrincipal implements UserDetails {
     public String getSubject() {
         return user.getSubject();
     }
+
+    public boolean hasAuthority(String authority) {
+        return getAuthorities().stream().filter(granted -> granted.getAuthority() != null)
+                .anyMatch(granted -> granted.getAuthority().equals(authority));
+    }
+
+    public boolean isAdmin() {
+        return hasAuthority("ADMIN");
+    }
 }

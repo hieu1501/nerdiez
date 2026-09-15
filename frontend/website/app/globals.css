@@ -50,12 +50,14 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-wrap: anywhere;
 }
 
 body {
   background: var(--paper);
   color: var(--ink);
   font-family: "iA Writer Quattro", Georgia, serif;
+  font-size: 15px;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
@@ -79,7 +81,12 @@ button {
   display: none;
 }
 :root[data-theme="dark"] .theme-label-dark {
-  display: inline;
+  display: none;
+}
+@media (min-width: 640px) {
+  :root[data-theme="dark"] .theme-label-dark {
+    display: inline;
+  }
 }
 
 @keyframes article-in {
@@ -98,6 +105,7 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .article-in {
     animation: none;
   }
@@ -109,8 +117,8 @@ button {
 }
 
 .reader-content {
-  font-size: 1rem;
-  line-height: 1.8;
+  font-size: 1.0625rem;
+  line-height: 1.85;
   color: var(--ink);
 }
 .reader-content > :first-child {
@@ -122,13 +130,16 @@ button {
 .reader-content h4 {
   font-weight: 700;
   line-height: 1.3;
-  margin: 2.25rem 0 0.75rem;
+  letter-spacing: -0.018em;
+  margin: 2.75rem 0 0.875rem;
 }
 .reader-content h1 {
   font-size: 1.5rem;
 }
 .reader-content h2 {
   font-size: 1.375rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.5rem;
 }
 .reader-content h3 {
   font-size: 1.1875rem;
@@ -138,8 +149,7 @@ button {
 }
 .reader-content p {
   margin: 1.125rem 0;
-  text-align: justify;
-  hyphens: auto;
+  text-align: left;
 }
 .reader-content ul,
 .reader-content ol {
@@ -161,9 +171,11 @@ button {
 }
 .reader-content blockquote {
   border-left: 3px solid var(--line);
+  background: var(--soft);
+  border-radius: 0 8px 8px 0;
   color: var(--muted);
   margin: 1.5rem 0;
-  padding: 0.125rem 0 0.125rem 1.25rem;
+  padding: 0.75rem 1.25rem;
 }
 .reader-content a {
   color: var(--ink);
@@ -191,7 +203,8 @@ button {
   line-height: 1.7;
   margin: 1.5rem 0;
   overflow-x: auto;
-  padding: 1rem 1.125rem;
+  overflow-wrap: normal;
+  padding: 1.125rem 1.25rem;
 }
 .reader-content pre code {
   background: none;
@@ -203,8 +216,8 @@ button {
   display: block;
   height: auto;
   margin: 1.5rem auto;
-  width: 95%;
-  max-width: 95%;
+  width: 100%;
+  max-width: 100%;
 }
 .reader-content hr {
   border: 0;
@@ -212,6 +225,8 @@ button {
   margin: 2.5rem 0;
 }
 .reader-content table {
+  display: block;
+  overflow-x: auto;
   border-collapse: collapse;
   font-size: 0.9375rem;
   margin: 1.5rem 0;
@@ -229,4 +244,8 @@ button {
 }
 .reader-content del {
   color: var(--muted);
+}
+
+.topic-reader .reader-content p {
+  text-align: left;
 }

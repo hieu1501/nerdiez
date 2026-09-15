@@ -1,5 +1,6 @@
 package com.tmb.csnerd.demo.utils;
 
+import com.tmb.csnerd.demo.domain.services.media.MediaUtils;
 import org.commonmark.node.AbstractVisitor;
 import org.commonmark.node.Image;
 import org.commonmark.node.Link;
@@ -11,9 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Component
 public class MarkdownUtils {
@@ -32,7 +31,6 @@ public class MarkdownUtils {
     public String normalizeMarkdownAndExtractImageUrls(String content, List<String> imagePaths) {
         Node document = parseDocument(content);
         List<String> errors = new ArrayList<>();
-
         document.accept(new AbstractVisitor() {
             @Override
             public void visit(Link link) {
@@ -60,7 +58,6 @@ public class MarkdownUtils {
 
      public String denormalizeImageUrlsInContent(String content) {
         Node document = parseDocument(content);
-
         document.accept(new AbstractVisitor() {
             @Override
             public void visit(Image image) {
@@ -77,6 +74,19 @@ public class MarkdownUtils {
         return renderDocument(document);
     }
 
+    public List<String> extractImagePathsInContent(String content) {
+        List<String> imagePaths = new ArrayList<>();
+        Node document = parseDocument(content);
+        document.accept(new AbstractVisitor() {
+            @Override
+            public void visit(Image image) {
+                imagePaths.add(image.getDestination());
+                super.visit(image);
+            }
+        });
+        return imagePaths;
+    }
+
     private Node parseDocument(String document) {
         return parser.parse(document);
     }
@@ -85,6 +95,7 @@ public class MarkdownUtils {
         return renderer.render(node);
     }
 
+    // Remove all root path from image links
     private String normalizeUrl(String value, String type, List<String> errors) {
         if (value == null || value.isBlank()) {
             errors.add("Url is blank");
@@ -133,6 +144,7 @@ public class MarkdownUtils {
         return value;
     }
 
+    // Changing all image paths to absolute paths
     private String denormalizeUrl(String value, String type) {
         if (value == null || value.isBlank()) {
             return null;

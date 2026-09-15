@@ -3,7 +3,6 @@ package com.tmb.csnerd.demo.dto.category.adminresponse;
 import com.tmb.csnerd.demo.domain.models.Category;
 import com.tmb.csnerd.demo.domain.services.fingerprint.IFingerprintData;
 import com.tmb.csnerd.demo.dto.category.publicresponse.CategoryPublicRefDTO;
-import com.tmb.csnerd.demo.dto.topic.publicresponse.TopicPublicRefDTO;
 import com.tmb.csnerd.demo.dto.user.UserRefDTO;
 
 import java.time.Instant;

@@ -27,7 +27,7 @@ public class Image {
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id")
-    private Post post;
+    @NotNull
+    @Column(name = "use_count", nullable = false)
+    private Long useCount = 0L;
 }

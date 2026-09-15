@@ -59,7 +59,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: topics
+        - name: tags
           in: query
           required: false
           description: |
@@ -355,10 +355,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error'
-  /topics:
+  /tags:
     post:
-      tags: [topics]
-      summary: Add a topic
+      tags: [tags]
+      summary: Add a tag
       security:
         - bearerHttpAuthentication:
             - write: admin
@@ -367,20 +367,24 @@ paths:
         content:
           application/json:
             schema:
-              type: string
+              $ref: '#/components/schemas/tagRequest'
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tagAdminDetail'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/error'
-  /topics/{id}:
+  /tags/{id}:
     delete:
-      tags: [topics]
-      summary: Delete a topic
+      tags: [tags]
+      summary: Delete a tag
       security:
         - bearerHttpAuthentication:
             - write: admin
@@ -400,8 +404,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/error'
     patch:
-      tags: [topics]
-      summary: Change information of a topic
+      tags: [tags]
+      summary: Change information of a tag
       security:
         - bearerHttpAuthentication:
             - write: authorizedUser
@@ -416,10 +420,14 @@ paths:
         content:
           application/json:
             schema:
-              type: string
+              $ref: '#/components/schemas/tagPatchRequest'
       responses:
         "200":
           description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tagAdminDetail'
         default:
           description: Unexpected error
           content:
@@ -432,9 +440,53 @@ components:
       description: Category of a blog
       type: string
       enum: ['cs', 'econs']
-    topic:
-      description: Topic of a blog
-      type: string
+    tag:
+      description: Tag of a blog
+      type: object
+      required: [slugName, category]
+      properties:
+        slugName:
+          type: string
+          maxLength: 255
+        category:
+          $ref: '#/components/schemas/category'
+    tagRequest:
+      type: object
+      required: [slugName, categoryId]
+      properties:
+        slugName:
+          type: string
+          maxLength: 255
+        categoryId:
+          type: integer
+          format: int64
+        isActive:
+          type: boolean
+    tagPatchRequest:
+      type: object
+      properties:
+        slugName:
+          type: string
+          maxLength: 255
+        categoryId:
+          type: integer
+          format: int64
+        isActive:
+          type: boolean
+    tagAdminDetail:
+      type: object
+      required: [tagId, slugName, isActive, category]
+      properties:
+        tagId:
+          type: integer
+          format: int64
+        slugName:
+          type: string
+          maxLength: 255
+        isActive:
+          type: boolean
+        category:
+          $ref: '#/components/schemas/category'
     articleShow:
       description: Article showcase
       type: object
@@ -452,12 +504,12 @@ components:
           type: integer
         category:
           $ref: '#/components/schemas/category'
-        topics:
+        tags:
           type: array
           minItems: 1
           maxItems: 5
           items:
-            $ref: '#/components/schemas/topic'
+            $ref: '#/components/schemas/tag'
     articleDetail:
       description: Content of article
       type: object
@@ -477,12 +529,12 @@ components:
           type: integer
         category:
           $ref: '#/components/schemas/category'
-        topics:
+        tags:
           type: array
           minItems: 1
           maxItems: 5
           items:
-            $ref: '#/components/schemas/topic'
+            $ref: '#/components/schemas/tag'
     articleAdd:
       description: Article content to add
       type: object
@@ -497,12 +549,12 @@ components:
           type: string
         category:
           $ref: '#/components/schemas/category'
-        topics:
+        tagIds:
           type: array
           minItems: 1
           maxItems: 5
           items:
-            $ref: '#/components/schemas/topic'
+            type: integer
     articleUpdate:
       description: Components to update an article
       type: object
@@ -515,12 +567,12 @@ components:
           $ref: '#/components/schemas/category'
         featuredImage:
           type: string
-        topics:
+        tagIds:
           type: array
           minItems: 1
           maxItems: 5
           items:
-            $ref: '#/components/schemas/topic'
+            type: integer
     articleList:
       type: array
       items:

@@ -1,7 +1,7 @@
 import Button from "@/components/ui/button/Button";
 
 interface VisibilitySaveConfirmationProps {
-  itemType: "category" | "topic";
+  itemType: "category" | "topic" | "tag" | "talk";
   itemName: string;
   isActive: boolean;
   saving: boolean;

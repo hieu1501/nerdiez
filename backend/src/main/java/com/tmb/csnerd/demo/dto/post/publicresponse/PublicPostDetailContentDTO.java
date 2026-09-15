@@ -3,9 +3,10 @@ package com.tmb.csnerd.demo.dto.post.publicresponse;
 import com.tmb.csnerd.demo.domain.models.Post;
 import com.tmb.csnerd.demo.domain.services.fingerprint.IFingerprintData;
 import com.tmb.csnerd.demo.dto.category.publicresponse.CategoryPublicRefDTO;
-import com.tmb.csnerd.demo.dto.topic.publicresponse.TopicPublicRefDTO;
+import com.tmb.csnerd.demo.dto.tag.publicresponse.TagPublicRefDTO;
 import com.tmb.csnerd.demo.dto.user.UserRefDTO;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -18,9 +19,10 @@ public record PublicPostDetailContentDTO(
     CategoryPublicRefDTO category,
     Instant createdAt,
     Instant updatedAt,
-    List<TopicPublicRefDTO> topics,
+    List<TagPublicRefDTO> tags,
     String featuredImage,
-    String description
+    String description,
+    URI canonicalUri
 ) {
     private record FingerprintData(
             String representation,
@@ -28,10 +30,11 @@ public record PublicPostDetailContentDTO(
             Instant updatedAt,
             UserRefDTO author,
             CategoryPublicRefDTO category,
-            List<TopicPublicRefDTO> topics
+            List<TagPublicRefDTO> tags,
+            String canonicalUri
     ) implements IFingerprintData {}
 
-    public static PublicPostDetailContentDTO from(Post post, String content, String featuredImageUrl) {
+    public static PublicPostDetailContentDTO from(Post post, String content, String featuredImageUrl, URI canonicalUri) {
         return new PublicPostDetailContentDTO(
             post.getSlug(),
             post.getTitle(),
@@ -40,13 +43,14 @@ public record PublicPostDetailContentDTO(
             CategoryPublicRefDTO.from(post.getCategory()),
             post.getCreatedAt(),
             post.getUpdatedAt(),
-            post.getTopics().stream().map(TopicPublicRefDTO::from).sorted(Comparator.comparing(TopicPublicRefDTO::slugName)).toList(),
+            post.getTags().stream().map(TagPublicRefDTO::from).sorted(Comparator.comparing(TagPublicRefDTO::slugName)).toList(),
             featuredImageUrl,
-            post.getDescription()
+            post.getDescription(),
+            canonicalUri
         );
     }
 
-    public static PublicPostDetailContentDTO from(String slug, String title, String content, UserRefDTO author, CategoryPublicRefDTO category, Instant createdAt, Instant updatedAt, List<TopicPublicRefDTO> topics, String featuredImageUrl, String description) {
+    public static PublicPostDetailContentDTO from(String slug, String title, String content, UserRefDTO author, CategoryPublicRefDTO category, Instant createdAt, Instant updatedAt, List<TagPublicRefDTO> tags, String featuredImageUrl, String description, URI canonicalUri) {
         return new PublicPostDetailContentDTO(
                 slug,
                 title,
@@ -55,13 +59,14 @@ public record PublicPostDetailContentDTO(
                 category,
                 createdAt,
                 updatedAt,
-                topics,
+                tags,
                 featuredImageUrl,
-                description
+                description,
+                canonicalUri
         );
     }
 
     public IFingerprintData getFingerprintData() {
-        return new FingerprintData("public-post-detail", slugName, updatedAt, author, category, topics);
+        return new FingerprintData("public-post-detail", slugName, updatedAt, author, category, tags, canonicalUri.toString());
     }
 }
