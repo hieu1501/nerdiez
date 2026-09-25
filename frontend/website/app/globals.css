@@ -1,51 +1,101 @@
 @import "tailwindcss";
 
+/* Nerdiez palette: calm paper neutrals, pine-teal brand, amber highlight. */
 :root {
-  --paper: #fbfaf7;
-  --ink: #1f1e1b;
-  --muted: #6b6860;
-  --line: #e2ded2;
-  --soft: #efede4;
-  --accent: #55524a;
-  --accent-soft: #e9e6da;
-  --upvote: #15803d;
-  --downvote: #b91c1c;
-  --drawer: #fbfaf7;
-  --button: #1f1e1b;
-  --button-text: #fbfaf7;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --paper: #f6f5f1;
+  --surface: #ffffff;
+  --ink: #1a1c1e;
+  --muted: #5f636a;
+  --line: #e2e0d9;
+  --soft: #eeede7;
+  --accent: #0e7c66;
+  --accent-hover: #0a6553;
+  --accent-soft: #dff1eb;
+  --accent-ink: #ffffff;
+  --highlight: #d9901f;
+  --highlight-soft: #fbefd9;
+  --upvote: #0e7c66;
+  --downvote: #c2410c;
+  --danger: #c93a3a;
+  --drawer: #ffffff;
+  --button: #0e7c66;
+  --button-text: #ffffff;
+  --tone-blue: #3f5bd8;
+  --tone-blue-soft: #e5e9fb;
+  --tone-amber: #b3700b;
+  --tone-amber-soft: #fbefd9;
+  --tone-rose: #c2416b;
+  --tone-rose-soft: #fae6ec;
+  --tone-violet: #7048c8;
+  --tone-violet-soft: #eee8fa;
+  --tone-teal: #0e7c66;
+  --tone-teal-soft: #dff1eb;
+  --mark-frame: #1a1c1e;
+  --mark-lens: #3f968a;
+  --mark-spark: #f2b65a;
+  --shadow-card: 0 1px 2px rgb(26 28 30 / 0.04), 0 4px 16px -8px rgb(26 28 30 / 0.12);
+  --shadow-pop: 0 18px 48px -18px rgb(26 28 30 / 0.35);
 }
 
 :root[data-theme="dark"] {
-  --paper: #131a24;
-  --ink: #e8edf4;
-  --muted: #94a3b8;
-  --line: #26324a;
-  --soft: #1b2330;
-  --accent: #cbd5e1;
-  --accent-soft: #26324a;
-  --upvote: #4ade80;
-  --downvote: #f87171;
-  --drawer: #161e2a;
-  --button: #e8edf4;
-  --button-text: #131a24;
+  --paper: #0f1214;
+  --surface: #171b1e;
+  --ink: #e7e9eb;
+  --muted: #9aa2aa;
+  --line: #2a3035;
+  --soft: #1f2428;
+  --accent: #3cc6a4;
+  --accent-hover: #62d5b8;
+  --accent-soft: #15302a;
+  --accent-ink: #07130f;
+  --highlight: #f2b65a;
+  --highlight-soft: #33280f;
+  --upvote: #3cc6a4;
+  --downvote: #fb8a4c;
+  --danger: #f27474;
+  --drawer: #171b1e;
+  --button: #3cc6a4;
+  --button-text: #07130f;
+  --tone-blue: #8ea2ff;
+  --tone-blue-soft: #1d2340;
+  --tone-amber: #f2b65a;
+  --tone-amber-soft: #33280f;
+  --tone-rose: #f28bab;
+  --tone-rose-soft: #3a1c27;
+  --tone-violet: #b9a0ff;
+  --tone-violet-soft: #29203f;
+  --tone-teal: #3cc6a4;
+  --tone-teal-soft: #15302a;
+  --mark-frame: #f2b65a;
+  --mark-lens: #8fe0cb;
+  --mark-spark: #ffffff;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px -8px rgb(0 0 0 / 0.5);
+  --shadow-pop: 0 18px 48px -18px rgb(0 0 0 / 0.7);
 }
 
 @theme inline {
   --color-paper: var(--paper);
+  --color-surface: var(--surface);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-soft: var(--soft);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-highlight: var(--highlight);
+  --color-highlight-soft: var(--highlight-soft);
   --color-upvote: var(--upvote);
   --color-downvote: var(--downvote);
+  --color-danger: var(--danger);
   --color-drawer: var(--drawer);
   --color-button: var(--button);
   --color-button-text: var(--button-text);
-  --font-sans: "iA Writer Quattro", Georgia, serif;
-  --font-serif: "iA Writer Quattro", Georgia, serif;
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-code), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 html {
@@ -56,19 +106,32 @@ html {
 body {
   background: var(--paper);
   color: var(--ink);
-  font-family: "iA Writer Quattro", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 15px;
-  transition: background 0.2s ease, color 0.2s ease;
 }
+
+/* Set for one frame while the theme swaps so colours change instantly. */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}
+
 
 button {
   font: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
 }
 
 .theme-icon-dark {
-  display: none;
-}
-.theme-label-dark {
   display: none;
 }
 :root[data-theme="dark"] .theme-icon-light {
@@ -77,22 +140,24 @@ button {
 :root[data-theme="dark"] .theme-icon-dark {
   display: inline-block;
 }
-:root[data-theme="dark"] .theme-label-light {
-  display: none;
-}
-:root[data-theme="dark"] .theme-label-dark {
-  display: none;
-}
-@media (min-width: 640px) {
-  :root[data-theme="dark"] .theme-label-dark {
-    display: inline;
-  }
+
+/* Subject accent colours; set --tone/--tone-soft through a tone-* class. */
+.tone-blue { --tone: var(--tone-blue); --tone-soft: var(--tone-blue-soft); }
+.tone-amber { --tone: var(--tone-amber); --tone-soft: var(--tone-amber-soft); }
+.tone-rose { --tone: var(--tone-rose); --tone-soft: var(--tone-rose-soft); }
+.tone-violet { --tone: var(--tone-violet); --tone-soft: var(--tone-violet-soft); }
+.tone-teal { --tone: var(--tone-teal); --tone-soft: var(--tone-teal-soft); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
 }
 
 @keyframes article-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -101,7 +166,7 @@ button {
 }
 
 .article-in {
-  animation: article-in 0.45s ease both;
+  animation: article-in 0.4s ease both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -111,49 +176,75 @@ button {
   }
 }
 
-:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 3px;
+/* In the base layer so fields with their own focus style (focus:outline-none + ring) can turn it off. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 .reader-content {
-  font-size: 1.0625rem;
-  line-height: 1.85;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.65;
   color: var(--ink);
 }
+.reader-content.reader-compact {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  line-height: 1.75;
+}
+/* Replies: smaller type and tighter rhythm so more answers fit on screen. */
+.reader-content.reader-dense {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.reader-dense p, .reader-dense ul, .reader-dense ol { margin: 0.6rem 0; }
+.reader-dense li { margin: 0.2rem 0; }
+.reader-dense h1, .reader-dense h2, .reader-dense h3, .reader-dense h4 { margin: 1rem 0 0.4rem; }
+.reader-dense h1 { font-size: 1.05rem; }
+.reader-dense h2 { font-size: 1rem; }
+.reader-dense h3, .reader-dense h4 { font-size: 0.9375rem; }
+.reader-dense pre { font-size: 0.8125rem; line-height: 1.6; margin: 0.75rem 0; padding: 0.75rem 1rem; }
+.reader-dense blockquote { margin: 0.75rem 0; padding: 0.5rem 0.9rem; }
+.reader-dense img, .reader-dense table { margin: 0.75rem auto; }
+
 .reader-content > :first-child {
   margin-top: 0;
+}
+.reader-content > :last-child {
+  margin-bottom: 0;
 }
 .reader-content h1,
 .reader-content h2,
 .reader-content h3,
 .reader-content h4 {
+  font-family: var(--font-sans);
   font-weight: 700;
   line-height: 1.3;
-  letter-spacing: -0.018em;
-  margin: 2.75rem 0 0.875rem;
+  letter-spacing: -0.015em;
+  margin: 1.5rem 0 0.5rem;
 }
 .reader-content h1 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 .reader-content h2 {
-  font-size: 1.375rem;
-  border-top: 1px solid var(--line);
-  padding-top: 1.5rem;
+  font-size: 1.125rem;
 }
 .reader-content h3 {
-  font-size: 1.1875rem;
+  font-size: 1.025rem;
 }
 .reader-content h4 {
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
 }
 .reader-content p {
-  margin: 1.125rem 0;
-  text-align: left;
+  margin: 0.75rem 0;
 }
 .reader-content ul,
 .reader-content ol {
-  margin: 1.125rem 0;
+  margin: 0.75rem 0;
   padding-left: 1.5rem;
 }
 .reader-content ul {
@@ -163,73 +254,81 @@ button {
   list-style: decimal;
 }
 .reader-content li {
-  margin: 0.375rem 0;
+  margin: 0.25rem 0;
   padding-left: 0.25rem;
 }
 .reader-content li::marker {
-  color: var(--muted);
+  color: var(--accent);
 }
 .reader-content blockquote {
-  border-left: 3px solid var(--line);
-  background: var(--soft);
-  border-radius: 0 8px 8px 0;
-  color: var(--muted);
-  margin: 1.5rem 0;
-  padding: 0.75rem 1.25rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 10px 10px 0;
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+}
+.reader-content blockquote > :first-child {
+  margin-top: 0;
+}
+.reader-content blockquote > :last-child {
+  margin-bottom: 0;
 }
 .reader-content a {
-  color: var(--ink);
+  color: var(--accent);
   text-decoration: underline;
-  text-decoration-color: var(--line);
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
   text-underline-offset: 3px;
   transition: text-decoration-color 0.2s ease;
 }
 .reader-content a:hover {
-  text-decoration-color: var(--ink);
+  text-decoration-color: var(--accent);
 }
 .reader-content code {
   background: var(--soft);
-  border-radius: 4px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
   font-family: var(--font-mono);
-  font-size: 0.875em;
-  padding: 0.15em 0.4em;
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
 }
 .reader-content pre {
   background: var(--soft);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   font-family: var(--font-mono);
-  font-size: 0.875rem;
-  line-height: 1.7;
-  margin: 1.5rem 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  margin: 1rem 0;
   overflow-x: auto;
   overflow-wrap: normal;
-  padding: 1.125rem 1.25rem;
+  padding: 0.875rem 1.1rem;
 }
 .reader-content pre code {
   background: none;
+  border: 0;
   border-radius: 0;
   padding: 0;
 }
 .reader-content img {
-  border-radius: 8px;
+  border-radius: 12px;
   display: block;
   height: auto;
-  margin: 1.5rem auto;
+  margin: 1.1rem auto;
   width: 100%;
   max-width: 100%;
 }
 .reader-content hr {
   border: 0;
   border-top: 1px solid var(--line);
-  margin: 2.5rem 0;
+  margin: 1.5rem 0;
 }
 .reader-content table {
   display: block;
   overflow-x: auto;
   border-collapse: collapse;
-  font-size: 0.9375rem;
-  margin: 1.5rem 0;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  margin: 1rem 0;
   width: 100%;
 }
 .reader-content th,
@@ -245,7 +344,7 @@ button {
 .reader-content del {
   color: var(--muted);
 }
-
-.topic-reader .reader-content p {
-  text-align: left;
+.reader-content input[type="checkbox"] {
+  accent-color: var(--accent);
+  margin-right: 0.4rem;
 }

@@ -123,8 +123,8 @@ export default function CategoriesPage() {
           }}
         />
       )}
-      <PageHeader title="Categories" onAdd={() => { setEditing(null); setModalOpen(true); }} addLabel="Add Category" />
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+      <PageHeader title="Categories" description="Subjects shown in the public site’s navigation." onAdd={() => { setEditing(null); setModalOpen(true); }} addLabel="Add Category" />
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">Loading...</div>
         ) : items.length === 0 ? (
@@ -132,7 +132,7 @@ export default function CategoriesPage() {
         ) : (
           <>
             <Table>
-              <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+              <TableHeader className="border-b border-gray-100 bg-gray-50/60 dark:border-gray-800 dark:bg-white/[0.02]">
                 <TableRow>
                   <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Name</TableCell>
                   <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Description</TableCell>
@@ -140,7 +140,7 @@ export default function CategoriesPage() {
                   <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-end text-theme-xs dark:text-gray-400">Actions</TableCell>
                 </TableRow>
               </TableHeader>
-              <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {paged.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">

@@ -11,7 +11,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @Setter
 @Entity
-@Table(name = "talks_metadata", schema = "nerdy")
+@Table(name = "talks_metadata", schema = "nerdiez")
 public class TalksMetadata {
     @Id
     @Column(name = "talk_id", nullable = false)

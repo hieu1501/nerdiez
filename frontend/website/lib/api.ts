@@ -1,3 +1,5 @@
+import { api, ApiError } from "./api-client";
+
 export interface CategoryPublicRefDTO {
   name: string;
   slugName: string;
@@ -31,6 +33,7 @@ export interface UserRefDTO {
 export interface UserProfileResponseDTO {
   username: string;
   displayName: string;
+  avatarUrl: string | null;
 }
 
 export interface VoteStatsDTO {
@@ -42,11 +45,12 @@ export interface VoteStatsDTO {
 export type VoteValue = -1 | 0 | 1;
 export type VotableResource = "articles" | "talks";
 
+// Feed card data; the author is only in the detail DTO.
 export interface PublicPostBriefContentDTO {
   slugName: string;
   title: string;
+  description: string | null;
   featuredImage: string | null;
-  author: UserRefDTO;
   category: CategoryPublicRefDTO;
   tags: TagPublicRefDTO[];
   createdAt: string;
@@ -61,8 +65,7 @@ export interface PublicPostBriefDTO {
 
 export interface PublicPostDetailContentDTO extends PublicPostBriefContentDTO {
   content: string;
-  featuredImage: string | null;
-  description: string | null;
+  author: UserRefDTO;
 }
 
 export interface PublicPostDetailDTO {
@@ -100,71 +103,31 @@ export interface SliceResponse<T> {
   hasPrevious: boolean;
 }
 
-export class ApiError extends Error {
-  constructor(public readonly path: string, public readonly status: number) {
-    super(`Request to ${path} failed with status ${status}`);
-    this.name = "ApiError";
-  }
-}
-
-let refreshPromise: Promise<boolean> | null = null;
-
-async function refreshAccessToken(): Promise<boolean> {
-  if (!refreshPromise) {
-    refreshPromise = fetch("/api/auth/refresh", {
-      method: "POST",
-      credentials: "include",
-    })
-      .then((res) => res.ok)
-      .catch(() => false)
-      .finally(() => { refreshPromise = null; });
-  }
-  return refreshPromise;
-}
-
-export async function requestJson<T>(path: string, options: RequestInit = {}, publicRead = false): Promise<T> {
-  const init = { ...options, cache: "no-store" as const, headers: { Accept: "application/json", ...options.headers } };
-  let res = await fetch(path, { ...init, credentials: "include" });
-  if (res.status === 401) {
-    if (await refreshAccessToken()) {
-      res = await fetch(path, { ...init, credentials: "include" });
-    }
-    if (res.status === 401 && publicRead) {
-      res = await fetch(path, { ...init, credentials: "omit" });
-    }
-  }
-  if (!res.ok) throw new ApiError(path, res.status);
-  if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
-}
+export { ApiError } from "./api-client";
 
 export function fetchArticleDetail(publicUri: string): Promise<PublicPostDetailDTO> {
-  return requestJson(`/api/articles/${encodeURIComponent(publicUri)}`, {}, true);
+  return api.get(`/articles/${encodeURIComponent(publicUri)}`, false, { publicRead: true });
 }
 
 export function fetchTalkSlice(topicPublicUri: string, page: number, size: number): Promise<SliceResponse<PublicTalkDTO>> {
-  return requestJson(`/api/topics/${encodeURIComponent(topicPublicUri)}/talks?page=${page}&size=${size}`, {}, true);
+  return api.get(`/topics/${encodeURIComponent(topicPublicUri)}/talks?page=${page}&size=${size}`, false, { publicRead: true });
 }
 
 export function setResourceVote(resource: VotableResource, publicUri: string, vote: VoteValue): Promise<VoteResponseDTO> {
-  return requestJson(`/api/${resource}/${encodeURIComponent(publicUri)}/vote`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ vote }),
-  });
+  return api.put(`/${resource}/${encodeURIComponent(publicUri)}/vote`, { vote }, false);
 }
 
 export function fetchAllCategories(): Promise<CategoryPublicDetailDTO[]> {
-  return requestJson("/api/categories", {}, true);
+  return api.get("/categories", false, { publicRead: true });
 }
 
 export function fetchTopicSlice(categorySlug: string, page: number, size: number): Promise<SliceResponse<TopicPublicDetailDTO>> {
-  return requestJson(`/api/categories/${encodeURIComponent(categorySlug)}/topics?page=${page}&size=${size}`, {}, true);
+  return api.get(`/categories/${encodeURIComponent(categorySlug)}/topics?page=${page}&size=${size}`, false, { publicRead: true });
 }
 
 export async function fetchProfile(): Promise<UserProfileResponseDTO | null> {
   try {
-    return await requestJson<UserProfileResponseDTO>("/api/profile/me");
+    return await api.get<UserProfileResponseDTO>("/profile/me", false);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) return null;
     throw error;

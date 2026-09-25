@@ -6,8 +6,8 @@ import Button from "@/components/ui/button/Button";
 import Pagination from "@/components/tables/Pagination";
 import type { PageResponse, TagAdminRefDTO } from "@/services/content-types";
 
-export const panelClass = "rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/[0.03]";
-export const inputClass = "w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white";
+export const panelClass = "overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark";
+export const inputClass = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white";
 export const actionClass = "text-sm font-medium text-brand-600 hover:underline dark:text-brand-400";
 
 export function StatusBadge({ active }: { active: boolean }) {
@@ -15,7 +15,7 @@ export function StatusBadge({ active }: { active: boolean }) {
 }
 
 export function TagChips({ tags }: { tags: TagAdminRefDTO[] }) {
-  return <div className="flex flex-wrap gap-1.5">{tags.length ? tags.map((tag) => <span key={tag.tagId} className="break-all rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">{tag.slugName}</span>) : <span className="text-sm text-gray-400">No tags</span>}</div>;
+  return <div className="flex flex-wrap gap-1.5">{tags.length ? tags.map((tag) => <span key={tag.tagId} className="break-all rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">#{tag.slugName}</span>) : <span className="text-sm text-gray-400">No tags</span>}</div>;
 }
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -23,8 +23,8 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 }
 
 export function LoadState({ loading, error, empty, retry }: { loading: boolean; error?: Error; empty: string; retry: () => void }) {
-  return <div className="space-y-3 p-8 text-center text-sm text-gray-500 dark:text-gray-400" role={error ? "alert" : "status"}>
-    <p>{loading ? "Loading…" : error ? error.message : empty}</p>
+  return <div className="space-y-3 p-10 text-center text-sm text-gray-500 dark:text-gray-400" role={error ? "alert" : "status"}>
+    {loading ? <div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" aria-label="Loading" /> : <p>{error ? error.message : empty}</p>}
     {error && <Button size="sm" variant="outline" onClick={retry}>Retry</Button>}
   </div>;
 }

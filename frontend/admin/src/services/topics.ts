@@ -27,7 +27,7 @@ export const topicsService = {
   // Full topic data is currently available only through the admin listing.
   // Public APIs cannot substitute here: inactive topics must remain accessible.
   getById: async (id: number, signal?: AbortSignal): Promise<Topic> => {
-    if (!Number.isSafeInteger(id) || id <= 0) throw new ApiError("Topic not found.", 404);
+    if (!Number.isSafeInteger(id) || id <= 0) throw new ApiError("Topic not found.", 404, `/admin/api/topics/${id}`);
     let page = 0;
     while (!signal?.aborted) {
       const result = await topicsService.getAll({ page, size: 100, sort: "slug,asc" });
@@ -38,7 +38,7 @@ export const topicsService = {
       page += 1;
     }
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-    throw new ApiError("Topic not found.", 404);
+    throw new ApiError("Topic not found.", 404, `/admin/api/topics/${id}`);
   },
   create: (data: CreateTopicRequestDTO) => api.post<Topic>("/topics", data, true),
   update: (id: number, data: PatchTopicRequestDTO) => api.patch<Topic>(`/topics/${id}`, data, true),

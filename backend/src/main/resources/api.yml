@@ -1,13 +1,13 @@
 openapi: 3.1.0
 info:
-  title: 'Nerdy Blog API'
+  title: 'Nerdiez Blog API'
   description: 'API for a blog website with mainly computer science and economics topics.'
   version: 0.0.1
 servers:
   - url: https://{userName}.{domainName}:{port}/blog/{version}
     variables:
       userName:
-        default: nerdy
+        default: nerdiez
       port:
         enum:
           - "443"

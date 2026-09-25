@@ -42,5 +42,5 @@ export function TalkVotes({ initialVote }: { initialVote: TalkVoteState }) {
   const current = state.votes.find((vote) => vote.publicUri === initialVote.publicUri);
   const vote = current ?? initialVote;
   return <VoteControls key={`${vote.publicUri}:${vote.voteStats.version}:${vote.userVote}`} resource="talks" publicUri={vote.publicUri}
-    initialVoteStats={vote.voteStats} initialUserVote={vote.userVote} loadingVote={state.loading} loadFailed={state.failed || !current} onRetry={state.retry} />;
+    initialVoteStats={vote.voteStats} initialUserVote={vote.userVote} loadingVote={state.loading} loadFailed={state.failed || !current} onRetry={state.retry} compact />;
 }

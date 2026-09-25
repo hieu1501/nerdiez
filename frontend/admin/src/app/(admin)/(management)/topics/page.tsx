@@ -26,15 +26,14 @@ export default function TopicsPage() {
   };
   const sortHeader = (field: SortField, label: string) => <th scope="col" className="px-5 py-4 font-medium" aria-sort={sort.field === field ? sort.direction === "asc" ? "ascending" : "descending" : "none"}><button onClick={() => changeSort(field)} className="whitespace-nowrap hover:text-brand-500">{label} <span aria-hidden="true">{sort.field === field ? sort.direction === "asc" ? "↑" : "↓" : "↕"}</span></button></th>;
   return <div>
-    <PageHeader title="Topics" onAdd={() => setEditor({})} addLabel="Add Topic" />
-    <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">Questions and discussions from your community.</p>
+    <PageHeader title="Topics" description="Questions from the community. New topics stay private until you activate them." onAdd={() => setEditor({})} addLabel="Add Topic" />
     <div className={panelClass}>
       {resource.loading || resource.error || !data?.items.length ? <>
         <LoadState loading={resource.loading} error={resource.error} empty={page > 0 ? "No topics on this page." : "No topics yet. Create the first discussion."} retry={resource.reload} />
         {!resource.loading && !resource.error && page > 0 && <button className={`${actionClass} m-5`} onClick={() => setPage(0)}>Back to first page</button>}
       </> : <>
         <div className="overflow-x-auto"><table className="w-full text-left text-sm">
-          <thead className="border-b border-gray-100 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400"><tr>
+          <thead className="border-b border-gray-100 bg-gray-50/60 text-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400"><tr>
             {sortHeader("slug", "Title")}
             <th scope="col" className="px-5 py-4 font-medium">Author</th>
             {sortHeader("category.slugName", "Category")}

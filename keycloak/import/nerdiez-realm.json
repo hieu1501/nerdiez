@@ -1,0 +1,126 @@
+{
+  "realm": "nerdiez",
+  "enabled": true,
+  "sslRequired": "none",
+  "clients": [
+    {
+      "clientId": "nerdiez-client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "secret": "__KEYCLOAK_CLIENT_SECRET__",
+      "redirectUris": [__KC_CLIENT_REDIRECT_URIS_JSON__],
+      "webOrigins": [__KC_CLIENT_WEB_ORIGINS_JSON__]
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-nerdiez-client",
+      "enabled": true,
+      "serviceAccountClientId": "nerdiez-client",
+      "clientRoles": {
+        "realm-management": ["manage-users"]
+      }
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "auto-link review profile",
+      "config": { "update.profile.on.first.login": "missing" }
+    },
+    {
+      "alias": "auto-link create unique user",
+      "config": { "require.password.update.after.registration": "false" }
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "auto-link first broker login",
+      "description": "Like 'first broker login', but links a verified matching email without asking.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        { "authenticator": "idp-review-profile", "authenticatorConfig": "auto-link review profile", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 10, "userSetupAllowed": false },
+        { "flowAlias": "auto-link user creation or linking", "authenticatorFlow": true, "requirement": "REQUIRED", "priority": 20, "userSetupAllowed": false }
+      ]
+    },
+    {
+      "alias": "auto-link user creation or linking",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        { "authenticator": "idp-create-user-if-unique", "authenticatorConfig": "auto-link create unique user", "authenticatorFlow": false, "requirement": "ALTERNATIVE", "priority": 10, "userSetupAllowed": false },
+        { "authenticator": "idp-auto-link", "authenticatorFlow": false, "requirement": "ALTERNATIVE", "priority": 20, "userSetupAllowed": false }
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": true,
+      "trustEmail": true,
+      "storeToken": false,
+      "firstBrokerLoginFlowAlias": "auto-link first broker login",
+      "config": {
+        "clientId": "__GOOGLE_IDP_CLIENT_ID__",
+        "clientSecret": "__GOOGLE_IDP_CLIENT_SECRET__",
+        "syncMode": "IMPORT",
+        "useJwksUrl": "true"
+      }
+    },
+    {
+      "alias": "github",
+      "providerId": "github",
+      "enabled": true,
+      "trustEmail": true,
+      "storeToken": false,
+      "firstBrokerLoginFlowAlias": "auto-link first broker login",
+      "config": {
+        "clientId": "__GITHUB_IDP_CLIENT_ID__",
+        "clientSecret": "__GITHUB_IDP_CLIENT_SECRET__",
+        "syncMode": "IMPORT"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "google-picture",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "google-user-attribute-mapper",
+      "config": {
+        "syncMode": "FORCE",
+        "jsonField": "picture",
+        "userAttribute": "picture"
+      }
+    },
+    {
+      "name": "github-avatar",
+      "identityProviderAlias": "github",
+      "identityProviderMapper": "github-user-attribute-mapper",
+      "config": {
+        "syncMode": "FORCE",
+        "jsonField": "avatar_url",
+        "userAttribute": "picture"
+      }
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"picture\",\"displayName\":\"Picture\",\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -12,3 +12,4 @@
 - Only modify code in "admin" project, do not modify "backend" and "frontend" project.
 - Modify code freely.
 - Delete unused files.
+- Can add new packages if needed but have to notify.

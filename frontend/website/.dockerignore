@@ -1,0 +1,28 @@
+# Rebuilt inside the image
+node_modules/
+.next/
+build/
+out/
+*.tsbuildinfo
+
+# Git / IDE / agents
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# Docker files themselves
+Dockerfile*
+.dockerignore
+
+# Docs / tests
+*.md
+design.txt
+tests/
+
+# Local secrets
+.env*
+*.pem
+
+.DS_Store
+npm-debug.log*

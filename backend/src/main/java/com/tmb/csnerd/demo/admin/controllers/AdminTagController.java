@@ -25,7 +25,6 @@ public class AdminTagController {
     private final TagQueryService tagQueryService;
 
     @GetMapping(
-        path="/all",
         produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE }
     )
     public ResponseEntity<List<TagAdminDetailDTO>> getAllTagsForAdmin(WebRequest webRequest) {

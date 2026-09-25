@@ -5,6 +5,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Configuration
 @ConfigurationProperties(prefix = "app.auth")
 public class AuthProperties {
@@ -24,7 +28,19 @@ public class AuthProperties {
     @Getter
     private String refreshTokenName;
 
+    @Value("${app.auth.admin-emails:}")
+    private String adminEmails;
+
     public Long getRefreshTokenExpireSeconds() {
         return refreshTokenExpireDays * 24 * 60 * 60;
+    }
+
+    // Emails granted the ADMIN role on first login, instead of the default USER role.
+    public Set<String> getAdminEmails() {
+        return Arrays.stream(adminEmails.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
     }
 }

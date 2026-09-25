@@ -7,9 +7,10 @@ import jakarta.validation.constraints.NotBlank;
 
 public record UserProfileResponseDTO(
   @NotBlank String username,
-  String displayName
+  String displayName,
+  String avatarUrl
 ) {
     public static UserProfileResponseDTO from(UserPrincipal user) {
-        return new UserProfileResponseDTO(user.getUsername(), user.getUsername());
+        return new UserProfileResponseDTO(user.getUsername(), user.getUsername(), user.getUser().getAvatarUrl());
     }
 }

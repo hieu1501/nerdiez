@@ -20,7 +20,7 @@ async function fetchFromServer(path: string, personalized = false): Promise<Resp
 
 async function readJson<T>(path: string, personalized = false): Promise<T> {
   const res = await fetchFromServer(path, personalized);
-  if (!res.ok) throw new ApiError(path, res.status);
+  if (!res.ok) throw new ApiError(`Request to ${path} failed with status ${res.status}`, res.status, path);
   return (await res.json()) as T;
 }
 
@@ -34,7 +34,7 @@ export const getArticleDetail = cache(async (publicUri: string): Promise<PublicP
   const path = `/api/articles/${encodeURIComponent(publicUri)}`;
   const res = await fetchFromServer(path, true);
   if (res.status === 404) return null;
-  if (!res.ok) throw new ApiError(path, res.status);
+  if (!res.ok) throw new ApiError(`Request to ${path} failed with status ${res.status}`, res.status, path);
   return (await res.json()) as PublicPostDetailDTO;
 });
 

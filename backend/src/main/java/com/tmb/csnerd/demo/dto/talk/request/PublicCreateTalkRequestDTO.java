@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record PublicCreateTalkRequestDTO(
-    @NotBlank @Size(min = 10, max = 10_000) String content,
+    @NotBlank @Size(min = 1, max = 10_000) String content,
     @NotNull String topicPublicUri,
     Boolean isActive
 ) { }

@@ -1,0 +1,30 @@
+# Rebuilt inside the image
+node_modules/
+.next/
+build/
+out/
+*.tsbuildinfo
+
+# Git / IDE / agents
+.git
+.gitignore
+.idea/
+.vscode/
+.agents/
+.codex/
+
+# Docker files themselves
+Dockerfile*
+.dockerignore
+
+# Docs / misc
+*.md
+LICENSE
+banner.png
+
+# Local secrets (Auth0 keys live here, never bake them in)
+.env*
+*.pem
+
+.DS_Store
+npm-debug.log*

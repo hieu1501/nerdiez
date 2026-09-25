@@ -1,10 +1,26 @@
-const RETURN_KEY = "nerdy:sign-in-return";
-const DRAFT_PREFIX = "nerdy:editor:";
+import type { UserProfileResponseDTO } from "./api";
+
+const RETURN_KEY = "nerdiez:sign-in-return";
+const DRAFT_PREFIX = "nerdiez:editor:";
+const USER_KEY = "auth_user";
+
+export function loadStoredProfile(): UserProfileResponseDTO | null {
+  try {
+    const stored = localStorage.getItem(USER_KEY);
+    return stored ? (JSON.parse(stored) as UserProfileResponseDTO) : null;
+  } catch { return null; }
+}
+export function storeProfile(profile: UserProfileResponseDTO | null): void {
+  try {
+    if (profile) localStorage.setItem(USER_KEY, JSON.stringify(profile));
+    else localStorage.removeItem(USER_KEY);
+  } catch {}
+}
 
 export function safeReturnPath(value: string | null): string | null {
   if (!value || !value.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u001f]/.test(value)) return null;
-  const url = new URL(value, "https://nerdy.local");
-  return url.origin === "https://nerdy.local" ? `${url.pathname}${url.search}${url.hash}` : null;
+  const url = new URL(value, "https://nerdiez.local");
+  return url.origin === "https://nerdiez.local" ? `${url.pathname}${url.search}${url.hash}` : null;
 }
 export function rememberSignInReturn(path: string): void {
   const safe = safeReturnPath(path);

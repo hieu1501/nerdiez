@@ -49,8 +49,8 @@ public class SecurityConfig {
                         .sessionAuthenticationStrategy(((authentication, request, response) -> {})))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/error/**").permitAll();
+                    auth.requestMatchers("/actuator/health").hasAuthority("SCOPE_ADMIN");
                     auth.requestMatchers("/api/auth/**").permitAll();
-                    auth.requestMatchers(HttpMethod.GET, "/media/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/topics/**").permitAll();

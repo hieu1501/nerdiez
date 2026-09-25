@@ -67,12 +67,11 @@ public class PostContentLoader {
                 ));
         Map<Long, CachedContent<PublicPostBriefContentDTO>> postBriefContentDTOs = new HashMap<>();
         for (PublicPostBriefContentProjection postInformation : postInformationList) {
-            UserRefDTO author = UserRefDTO.from(postInformation.getAuthorName());
             CategoryPublicRefDTO category = CategoryPublicRefDTO.from(postInformation.getCategoryName(), postInformation.getCategorySlug());
             List<TagPublicRefDTO> tags = tagsMappedByPostId.getOrDefault(postInformation.getId(), List.of());
             URI canonicalUri = publicResourceUriFactory.post(postInformation.getPublicUri(), false);
             String denormalizedFeaturedImageUrl = mediaUtils.buildMediaUrl(postInformation.getFeaturedImage());
-            PublicPostBriefContentDTO content = PublicPostBriefContentDTO.from(postInformation.getSlug(), postInformation.getTitle(), author, category, tags, postInformation.getCreatedAt(), postInformation.getUpdatedAt(), denormalizedFeaturedImageUrl, canonicalUri);
+            PublicPostBriefContentDTO content = PublicPostBriefContentDTO.from(postInformation.getSlug(), postInformation.getTitle(), postInformation.getDescription(), category, tags, postInformation.getCreatedAt(), postInformation.getUpdatedAt(), denormalizedFeaturedImageUrl, canonicalUri);
             String fingerprint = fingerprintService.fingerprint(content.getFingerprintData());
             postBriefContentDTOs.put(postInformation.getId(), new CachedContent<>(content, fingerprint));
         }

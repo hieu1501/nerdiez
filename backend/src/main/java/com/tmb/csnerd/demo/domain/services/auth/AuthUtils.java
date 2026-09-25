@@ -14,6 +14,8 @@ import java.util.Optional;
 
 @Component
 public class AuthUtils {
+    public static final String REFRESH_TOKEN_COOKIE_PATH = "/api/auth";
+
     @Getter
     private static Long accessTokenExpireSeconds;
     @Getter
@@ -53,9 +55,13 @@ public class AuthUtils {
     }
 
     public static void deleteCookie(HttpServletResponse response, String name) {
+        deleteCookie(response, name, "/");
+    }
+
+    public static void deleteCookie(HttpServletResponse response, String name, String path) {
         ResponseCookie cookie = ResponseCookie.from(name, "")
-                .httpOnly(true)
-                .path("/")
+                .httpOnly(true).secure(true).sameSite("Lax")
+                .path(path)
                 .maxAge(0).build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }

@@ -1,4 +1,5 @@
-import { requestJson, type CategoryPublicRefDTO, type TagPublicRefDTO, type TopicPublicRefDTO, type SliceResponse, type VoteStatsDTO } from "./api";
+import { api } from "./api-client";
+import { type CategoryPublicRefDTO, type TagPublicRefDTO, type TopicPublicRefDTO, type SliceResponse, type VoteStatsDTO } from "./api";
 import { publicIdentifier, type CategoryView } from "./resource-links";
 
 export interface PersonalPostBriefContentDTO {
@@ -72,13 +73,13 @@ export interface PersonalTalkContentDTO {
 export type AuthoredResource = CategoryView | "talks";
 
 export function fetchPersonalArticles(page: number, size: number): Promise<SliceResponse<PersonalPostBriefDTO>> {
-  return requestJson(`/api/me/articles?page=${page}&size=${size}`);
+  return api.get(`/me/articles?page=${page}&size=${size}`, false);
 }
 export function fetchPersonalArticle(publicUri: string): Promise<PersonalPostDetailDTO> {
-  return requestJson(`/api/me/articles/${encodeURIComponent(publicUri)}`);
+  return api.get(`/me/articles/${encodeURIComponent(publicUri)}`, false);
 }
 export function fetchPersonalTopics(page: number, size: number): Promise<SliceResponse<TopicPersonalDetailDTO>> {
-  return requestJson(`/api/me/topics?page=${page}&size=${size}`);
+  return api.get(`/me/topics?page=${page}&size=${size}`, false);
 }
 export async function fetchPersonalTopic(publicUri: string): Promise<TopicPersonalDetailDTO | null> {
   for (let page = 0; ; page++) {
@@ -89,26 +90,24 @@ export async function fetchPersonalTopic(publicUri: string): Promise<TopicPerson
   }
 }
 export function fetchTags(): Promise<TagPublicRefDTO[]> {
-  return requestJson("/api/tags", {}, true);
+  return api.get("/tags", false, { publicRead: true });
 }
 function write<T>(resource: AuthoredResource, body: unknown, publicUri?: string): Promise<T> {
-  return requestJson(`/api/${resource}${publicUri ? `/${encodeURIComponent(publicUri)}` : ""}`, {
-    method: publicUri ? "PATCH" : "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return publicUri
+    ? api.patch(`/${resource}/${encodeURIComponent(publicUri)}`, body, false)
+    : api.post(`/${resource}`, body, false);
 }
 export function createArticle(body: CreateArticleRequest): Promise<PersonalPostDetailDTO> { return write("articles", body); }
 export function patchArticle(publicUri: string, body: PatchArticleRequest): Promise<PersonalPostDetailDTO> { return write("articles", body, publicUri); }
 export function createTopic(body: CreateTopicRequest): Promise<TopicPersonalDetailDTO> { return write("topics", body); }
 export function patchTopic(publicUri: string, body: PatchTopicRequest): Promise<TopicPersonalDetailDTO> { return write("topics", body, publicUri); }
 export function fetchPersonalTalks(topicPublicUri: string, page: number, size: number): Promise<SliceResponse<PersonalTalkContentDTO>> {
-  return requestJson(`/api/me/topics/${encodeURIComponent(topicPublicUri)}/talks?page=${page}&size=${size}`);
+  return api.get(`/me/topics/${encodeURIComponent(topicPublicUri)}/talks?page=${page}&size=${size}`, false);
 }
 export function createTalk(body: CreateTalkRequest): Promise<PersonalTalkContentDTO> { return write("talks", body); }
 export function patchTalk(publicUri: string, body: PatchTalkRequest): Promise<PersonalTalkContentDTO> { return write("talks", body, publicUri); }
 export function deletePersonalContent(resource: AuthoredResource, publicUri: string): Promise<void> {
-  return requestJson(`/api/${resource}/${encodeURIComponent(publicUri)}`, { method: "DELETE" });
+  return api.delete(`/${resource}/${encodeURIComponent(publicUri)}`, false);
 }
 
 export function personalHref(view: CategoryView, page = 1): string {

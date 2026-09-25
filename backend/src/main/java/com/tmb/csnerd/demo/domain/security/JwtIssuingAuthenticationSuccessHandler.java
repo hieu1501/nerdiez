@@ -2,27 +2,26 @@ package com.tmb.csnerd.demo.domain.security;
 
 import com.tmb.csnerd.demo.domain.services.auth.AuthService;
 import com.tmb.csnerd.demo.domain.services.auth.AuthUtils;
+import com.tmb.csnerd.demo.exceptions.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.net.URI;
 
 @Component
 @RequiredArgsConstructor
 public class JwtIssuingAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     private final AuthService authService;
     private final AuthProperties authProperties;
-    private static final Logger log = LoggerFactory.getLogger(JwtIssuingAuthenticationSuccessHandler.class);
 
     @Value("${app.auth.redirect-uri-admin}")
     private String redirectUriForAdmin;
@@ -30,27 +29,26 @@ public class JwtIssuingAuthenticationSuccessHandler implements AuthenticationSuc
     private String redirectUriForPublic;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        AuthService.IssuedTokenPair tokens = authService.authenticateUser(authentication);
+    public void onAuthenticationSuccess(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Authentication authentication) throws IOException {
+        boolean isAdmin = isAdminHost(request);
+        AuthService.IssuedTokenPair tokens;
+        try {
+            tokens = isAdmin ? authService.authenticateAdmin(authentication) : authService.authenticateUser(authentication);
+        } catch (UnauthorizedException e) {
+            invalidateSession(request, response);
+            response.sendRedirect(UriComponentsBuilder.fromUriString(redirectUriForAdmin)
+                    .replacePath("/forbidden").build().toUriString());
+            return;
+        }
         AuthUtils.addCookie(response, authProperties.getAccessTokenName(), tokens.accessToken(), authProperties.getAccessTokenExpireSeconds(), "/", false);
-        AuthUtils.addCookie(response, authProperties.getRefreshTokenName(), tokens.refreshToken(), authProperties.getRefreshTokenExpireSeconds(), "/api/auth/refresh", false);
+        AuthUtils.addCookie(response, authProperties.getRefreshTokenName(), tokens.refreshToken(), authProperties.getRefreshTokenExpireSeconds(), AuthUtils.REFRESH_TOKEN_COOKIE_PATH, false);
         invalidateSession(request, response);
-        response.sendRedirect(getRedirectUriFromState(request.getParameter("state")));
+        response.sendRedirect(isAdmin ? redirectUriForAdmin : redirectUriForPublic);
     }
 
-    private String getRedirectUriFromState(String state) {
-        if (state == null) return redirectUriForPublic;
-        String encoded = state.substring(state.indexOf('|') + 1);
-        try {
-            String key = new String(Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8);
-            return switch (key) {
-                case "admin" -> redirectUriForAdmin;
-                default -> redirectUriForPublic;
-            };
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            return redirectUriForPublic;
-        }
+    // The OAuth callback lands on the host that started the login (host comes from X-Forwarded-Host).
+    private boolean isAdminHost(HttpServletRequest request) {
+        return request.getServerName().equalsIgnoreCase(URI.create(redirectUriForAdmin).getHost());
     }
 
     private void invalidateSession(HttpServletRequest request, HttpServletResponse response) {

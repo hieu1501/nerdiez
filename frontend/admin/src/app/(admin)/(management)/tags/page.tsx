@@ -17,12 +17,11 @@ export default function TagsPage() {
   const currentPage = Math.min(page, Math.max(0, Math.ceil(items.length / 10) - 1));
   const pageItems = items.slice(currentPage * 10, (currentPage + 1) * 10);
   return <div>
-    <PageHeader title="Tags" onAdd={() => setEditor({})} addLabel="Add Tag" />
-    <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">Shared labels for articles and discussions.</p>
+    <PageHeader title="Tags" description="Shared labels for articles and discussions." onAdd={() => setEditor({})} addLabel="Add Tag" />
     <div className={panelClass}>
       {resource.loading || resource.error || !items.length ? <LoadState loading={resource.loading} error={resource.error} empty="No tags yet. Add a tag to organize your content." retry={resource.reload} /> : <>
         <div className="overflow-x-auto"><table className="w-full text-left text-sm">
-          <thead className="border-b border-gray-100 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400"><tr>{["Tag", "Article use count", "Topic use count", "Status", "Actions"].map((label) => <th key={label} scope="col" className="px-5 py-4 font-medium">{label}</th>)}</tr></thead>
+          <thead className="border-b border-gray-100 bg-gray-50/60 text-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400"><tr>{["Tag", "Article use count", "Topic use count", "Status", "Actions"].map((label) => <th key={label} scope="col" className="px-5 py-4 font-medium">{label}</th>)}</tr></thead>
           <tbody className="divide-y divide-gray-100 dark:divide-white/10">{pageItems.map((tag) => <tr key={tag.tagId}>
             <td className="px-5 py-4 font-medium text-gray-900 dark:text-white">{tag.slugName}</td>
             <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{tag.postUseCount}</td>

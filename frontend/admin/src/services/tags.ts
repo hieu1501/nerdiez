@@ -9,7 +9,7 @@ export type Tag = TagAdminDetailDTO;
 export interface CreateTagRequestDTO { name: string; isActive: boolean; }
 export type UpdateTagRequestDTO = Partial<CreateTagRequestDTO>;
 export const tagsService = {
-  getAll: () => api.get<Tag[]>("/tags/all", true),
+  getAll: () => api.get<Tag[]>("/tags", true),
   create: (data: CreateTagRequestDTO) => api.post<Tag>("/tags", data, true),
   update: (id: number, data: UpdateTagRequestDTO) => api.patch<Tag>(`/tags/${id}`, data, true),
   delete: (id: number) => api.delete<void>(`/tags/${id}`, true),

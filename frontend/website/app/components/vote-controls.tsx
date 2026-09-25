@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useAuth } from "@/app/auth-provider";
+import { rememberVoteStats } from "./vote-store";
 import {
   ApiError,
   setResourceVote,
@@ -23,12 +24,9 @@ interface VoteButtonProps {
 // Firefox otherwise restores a button's dynamic disabled state before React hydrates it.
 const disableButtonStateRestoration = { autoComplete: "off" } as const;
 
-function VoteButton({ direction, count, active, disabled, onVote, label }: VoteButtonProps) {
+function VoteButton({ direction, count, active, disabled, onVote, label, compact }: VoteButtonProps & { compact: boolean }) {
   const Icon = direction === "up" ? ThumbsUp : ThumbsDown;
-  const activeClass =
-    direction === "up"
-      ? "border-upvote bg-upvote text-paper hover:bg-upvote/90"
-      : "border-downvote bg-downvote text-paper hover:bg-downvote/90";
+  const activeClass = direction === "up" ? "bg-accent-soft text-upvote" : "bg-highlight-soft text-downvote";
 
   return (
     <button
@@ -38,11 +36,11 @@ function VoteButton({ direction, count, active, disabled, onVote, label }: VoteB
       aria-pressed={active}
       disabled={disabled}
       onClick={onVote}
-      className={`inline-flex items-center gap-1 rounded-md border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-        active ? activeClass : "border-line text-muted hover:text-ink"
+      className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${compact ? "h-6 px-2 text-xs" : "h-8 px-3 text-sm"} tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+        active ? activeClass : `text-muted ${direction === "up" ? "hover:text-upvote" : "hover:text-downvote"} hover:bg-soft`
       }`}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className={`${compact ? "h-3.5 w-3.5" : "h-4 w-4"} ${active ? "fill-current/20" : ""}`} />
       {count}
     </button>
   );
@@ -56,11 +54,13 @@ interface VoteControlsProps {
   loadingVote?: boolean;
   loadFailed?: boolean;
   onRetry?: () => void;
+  align?: "start" | "end";
+  compact?: boolean;
 }
 
 export default function VoteControls({
   resource, publicUri, initialVoteStats, initialUserVote,
-  loadingVote = false, loadFailed = false, onRetry,
+  loadingVote = false, loadFailed = false, onRetry, align = "start", compact = false,
 }: VoteControlsProps) {
   const [voteStats, setVoteStats] = useState(initialVoteStats);
   const [userVote, setUserVote] = useState<VoteValue | null>(initialUserVote);
@@ -78,6 +78,7 @@ export default function VoteControls({
 
       try {
         const result = await setResourceVote(resource, publicUri, nextVote);
+        rememberVoteStats(resource, publicUri, result.votes);
         setVoteStats(result.votes);
         setUserVote(result.userVote);
       } catch (error) {
@@ -104,8 +105,8 @@ export default function VoteControls({
         : "No reaction selected.";
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="flex gap-2" aria-busy={loadingVote || submitting}>
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 ${align === "end" ? "justify-end" : ""}`}>
+      <div className="inline-flex items-center gap-0.5 rounded-full border border-line bg-surface p-0.5" aria-busy={loadingVote || submitting}>
         <VoteButton
           label={label}
           direction="up"
@@ -113,7 +114,9 @@ export default function VoteControls({
           active={userVote === 1}
           disabled={disabled}
           onVote={() => vote(1)}
+          compact={compact}
         />
+        <span className="h-4 w-px bg-line" aria-hidden="true" />
         <VoteButton
           label={label}
           direction="down"
@@ -121,9 +124,10 @@ export default function VoteControls({
           active={userVote === -1}
           disabled={disabled}
           onVote={() => vote(-1)}
+          compact={compact}
         />
       </div>
-      <div className="min-h-5 text-right text-xs text-muted" aria-live="polite">
+      <div className="min-h-5 text-xs text-muted" aria-live="polite">
         {loadingVote && <span>Loading your reaction…</span>}
         {loadFailed && (
           <span>
@@ -137,7 +141,8 @@ export default function VoteControls({
             </button>
           </span>
         )}
-        {!loadingVote && !loadFailed && <span>{message ?? voteStatus}</span>}
+        {!loadingVote && !loadFailed && message && <span className="text-danger">{message}</span>}
+        {!loadingVote && !loadFailed && !message && <span className="sr-only">{voteStatus}</span>}
       </div>
     </div>
   );

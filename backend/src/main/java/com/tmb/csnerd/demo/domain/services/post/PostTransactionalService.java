@@ -164,13 +164,16 @@ public class PostTransactionalService {
             currentFeatureImageUrl = post.getFeaturedImage();
             currentImagePaths.add(currentFeatureImageUrl);
         }
+        // Null keeps the current image, blank removes it.
         if (featuredImage == null) {
-            newImagePaths.add(currentFeatureImageUrl);
+            if (currentFeatureImageUrl != null) {
+                newImagePaths.add(currentFeatureImageUrl);
+            }
+        }
+        else if (featuredImage.isBlank()) {
+            post.setFeaturedImage(null);
         }
         else {
-            if (featuredImage.isBlank()) {
-                throw new IllegalArgumentException("Featured image must not be blank");
-            }
             if (!mediaUtils.isAllowedMediaUrl(featuredImage)) {
                 throw new IllegalArgumentException("Featured image is invalid");
             }
@@ -182,13 +185,9 @@ public class PostTransactionalService {
             newImagePaths.add(newFeaturedImagePath);
         }
         // Update description
+        // Null keeps the current description, blank removes it.
         if (description != null) {
-            if (description.isBlank()) {
-                throw new IllegalArgumentException("Description must not be blank");
-            }
-            if (!description.equals(post.getDescription())) {
-                post.setDescription(description);
-            }
+            post.setDescription(description.isBlank() ? null : description);
         }
         // Update active
         if (isActive!= null) {

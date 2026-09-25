@@ -11,7 +11,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @Setter
 @Entity
-@Table(name = "talks_vote", schema = "nerdy")
+@Table(name = "talks_vote", schema = "nerdiez")
 public class TalksVote {
     @EmbeddedId
     private TalksVoteId id;

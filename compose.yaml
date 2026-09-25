@@ -1,0 +1,217 @@
+name: nerdiez
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql-container
+    restart: unless-stopped
+    # Needed for V1.4__create_triggers.sql's CREATE FUNCTION statements (MySQL blocks
+    # non-SUPER users from creating them otherwise).
+    command: ["mysqld", "--log-bin-trust-function-creators=1"]
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - db
+    secrets:
+      - db_root_password
+      - db_password
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$(cat /run/secrets/db_root_password)\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Keycloak's own database, kept apart from the app's MySQL instance.
+  keycloak-db:
+    image: postgres:17
+    container_name: nerdiez-keycloak-db-container
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak_db_password
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    networks:
+      - keycloak_db
+    secrets:
+      - keycloak_db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  keycloak:
+    container_name: nerdiez-keycloak-container
+    build:
+      context: ./keycloak
+    restart: unless-stopped
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    env_file:
+      - ./.env.keycloak
+    # Realm import only runs when the realm doesn't exist yet, i.e. on an empty database.
+    command: start --optimized --import-realm
+    ports:
+      - "127.0.0.1:8081:8080"
+    networks:
+      - edge_backend
+      - keycloak_db
+    environment:
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      # Single instance, so skip production mode's cluster discovery.
+      KC_CACHE: local
+      # TLS ends at nginx; Keycloak serves plain HTTP behind it.
+      KC_HTTP_ENABLED: "true"
+      # Keeps Spring's internal keycloak:8080 calls working regardless of KC_HOSTNAME.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_PROXY_HEADERS: xforwarded
+    secrets:
+      - keycloak_db_password
+      - keycloak_admin_password
+      - keycloak_client_secret
+      - google_idp_client_secret
+      - github_idp_client_secret
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /auth/health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q '\"status\": \"UP\"' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  spring:
+    container_name: nerdiez-spring-container
+    build:
+      context: ./backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    env_file:
+      - ./.env.spring
+    networks:
+      - edge_backend
+      - api
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      KEYCLOAK_URL: http://keycloak:8080/auth # Docker-internal, same in every environment.
+      KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL} # Browser-facing; must match .env.keycloak's KC_HOSTNAME (differs per environment).
+      RSA_PRIVATE_KEY: file:/run/secrets/rsa_private_key
+      RSA_PUBLIC_KEY: file:/run/secrets/rsa_public_key
+    secrets:
+      - db_password
+      - keycloak_client_secret
+      - rsa_private_key
+      - rsa_public_key
+      - r2_access_key_id
+      - r2_secret_access_key
+
+  # No published ports: browsers reach the frontends only through nginx.
+  website:
+    container_name: nerdiez-website-container
+    build:
+      context: ./frontend/website
+    restart: unless-stopped
+    depends_on:
+      - spring
+    networks:
+      - edge_frontend
+      - api
+    environment:
+      # Server-side rendering only; browser requests use relative paths via nginx.
+      API_BASE_URL: http://spring:8080
+
+  admin:
+    container_name: nerdiez-admin-container
+    build:
+      context: ./frontend/admin
+    restart: unless-stopped
+    depends_on:
+      - spring
+    networks:
+      - edge_frontend
+      - api
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nerdiez-nginx-container
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - spring
+      - keycloak
+    volumes:
+      # *.template files are rendered into conf.d with env vars at container start.
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      # TLS cert and key (gitignored): mkcert in dev, Cloudflare Origin CA in prod.
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - edge_frontend
+      - edge_backend
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
+      ADMIN_HOST: ${ADMIN_HOST:-admin.localhost}
+      SSL_CERTIFICATE: ${SSL_CERTIFICATE:-/etc/nginx/certs/fullchain.pem}
+      SSL_CERTIFICATE_KEY: ${SSL_CERTIFICATE_KEY:-/etc/nginx/certs/privkey.pem}
+      # Point these at host.docker.internal when running `npm run dev` on the host.
+      WEBSITE_UPSTREAM: ${WEBSITE_UPSTREAM:-website:3000}
+      ADMIN_UPSTREAM: ${ADMIN_UPSTREAM:-admin:3000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+  db_password:
+    file: ./secrets/db_password.txt
+  keycloak_admin_password:
+    file: ./secrets/keycloak_admin_password.txt
+  keycloak_db_password:
+    file: ./secrets/keycloak_db_password.txt
+  keycloak_client_secret:
+    file: ./secrets/keycloak_client_secret.txt
+  google_idp_client_secret:
+    file: ./secrets/google_idp_client_secret.txt
+  github_idp_client_secret:
+    file: ./secrets/github_idp_client_secret.txt
+  r2_access_key_id:
+    file: ./secrets/r2_access_key_id.txt
+  r2_secret_access_key:
+    file: ./secrets/r2_secret_access_key.txt
+  rsa_private_key:
+    file: ./backend/src/main/resources/certs/private-key.pem
+  rsa_public_key:
+    file: ./backend/src/main/resources/certs/public-key.pem
+
+# Each network links only the services allowed to talk; MySQL is reachable from Spring alone.
+networks:
+  edge_frontend: # nginx <-> website, admin
+  edge_backend:  # nginx <-> spring, keycloak (also carries spring -> keycloak)
+  api:           # website, admin -> spring
+  db:            # spring -> mysql
+    internal: true # no internet access needed
+  keycloak_db:   # keycloak -> postgres
+    internal: true
+
+volumes:
+  mysql_data:
+  keycloak_db_data:

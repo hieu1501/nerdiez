@@ -80,7 +80,7 @@ public class TopicTransactionalService {
         requireAuthenticated(userPrincipal);
         Topic topic = topicRepository.getTopicById(topicId).orElseThrow(() -> new TopicByIdNotFoundException(topicId));
         requireOwnerOrAdmin(topic.getAuthor(), userPrincipal);
-        Topic changed = patchTopic(topic, request.name(), request.name());
+        Topic changed = patchTopic(topic, request.name(), request.description());
         changed.setIsActive(Boolean.TRUE.equals(request.isActive()));
         if (request.tagIds() != null && !request.tagIds().isEmpty()) {
             Set<Tag> requestedTags = tagQueryService.getTagsByIds(request.tagIds());
@@ -96,7 +96,7 @@ public class TopicTransactionalService {
         requireAuthenticated(userPrincipal);
         Topic topic = topicRepository.getTopicById(topicId).orElseThrow(() -> new TopicByIdNotFoundException(topicId));
         requireOwnerOrAdmin(topic.getAuthor(), userPrincipal);
-        Topic changed = patchTopic(topic, request.name(), request.name());
+        Topic changed = patchTopic(topic, request.name(), request.description());
         if (request.tagSlugs() != null && !request.tagSlugs().isEmpty()) {
             Set<Tag> requestedTags = tagQueryService.getActiveTagsBySlugNames(request.tagSlugs());
             updateTagsForTopic(topic, requestedTags);
@@ -107,12 +107,13 @@ public class TopicTransactionalService {
     }
 
     private Topic patchTopic(Topic topic, String name, String description) {
-        if (topic.getName() == null || (!name.isBlank() && !topic.getName().equals(name))) {
+        if (name != null && !name.isBlank() && !name.equals(topic.getName())) {
             topic.setName(name);
             topic.setSlug(createSlug(name));
         }
-        if (topic.getDescription() == null || (!description.isBlank() && !topic.getDescription().equals(description))) {
-            topic.setDescription(description);
+        // Null keeps the current description, blank removes it.
+        if (description != null) {
+            topic.setDescription(description.isBlank() ? null : description);
         }
         return topic;
     }

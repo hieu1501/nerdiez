@@ -57,14 +57,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             p.publicUri AS publicUri,
             p.slug AS slug,
             p.title AS title,
-            a.username AS authorName,
+            p.description AS description,
             c.name AS categoryName,
             c.slugName AS categorySlug,
             p.createdAt AS createdAt,
             p.updatedAt AS updatedAt,
             p.featuredImage AS featuredImage
         FROM Post p
-        JOIN p.author a
         JOIN p.category c
         JOIN p.postMetadata m
         WHERE p.id IN :ids

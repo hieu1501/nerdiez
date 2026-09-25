@@ -7,7 +7,7 @@ public interface PublicPostBriefContentProjection {
     String getPublicUri();
     String getSlug();
     String getTitle();
-    String getAuthorName();
+    String getDescription();
     String getCategoryName();
     String getCategorySlug();
     Instant getCreatedAt();

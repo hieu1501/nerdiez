@@ -6,12 +6,13 @@ import org.springframework.security.oauth2.client.web.DefaultOAuth2Authorization
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class KeycloakIdpHintResolver implements OAuth2AuthorizationRequestResolver {
+    private static final Set<String> ALLOWED_PROMPTS = Set.of("login", "select_account");
+
     private final OAuth2AuthorizationRequestResolver defaultResolver;
 
     public KeycloakIdpHintResolver(ClientRegistrationRepository clientRegistrationRepository, String authorizationRequestBaseUri) {
@@ -32,20 +33,16 @@ public class KeycloakIdpHintResolver implements OAuth2AuthorizationRequestResolv
         if (req == null) return null;
 
         String idp = request.getParameter("idp"); // "google" or "github"
-        if (idp == null) return req; // fall back to Keycloak's own login page
+        String prompt = request.getParameter("prompt");
+        boolean hasPrompt = prompt != null && ALLOWED_PROMPTS.contains(prompt); // Set.of rejects null lookups
+        if (idp == null && !hasPrompt) return req; // fall back to Keycloak's own login page
         Map<String, Object> params = new HashMap<>(req.getAdditionalParameters());
-        params.put("kc_idp_hint", idp);
-        OAuth2AuthorizationRequest.Builder builder = OAuth2AuthorizationRequest.from(req)
-                .additionalParameters(params);
-
-        String redirectUri = request.getParameter("redirect_uri");
-        if (redirectUri != null) {
-            // Encode custom data into the state param, alongside Spring's own CSRF value
-            String customState = req.getState() + "|" + Base64.getUrlEncoder()
-                    .encodeToString(redirectUri.getBytes(StandardCharsets.UTF_8));
-            builder.state(customState);
-        }
-        return builder.build();
+        if (idp != null) params.put("kc_idp_hint", idp);
+        // Keycloak forwards prompt to Google/GitHub, so the user can pick a different account there
+        if (hasPrompt) params.put("prompt", prompt);
+        return OAuth2AuthorizationRequest.from(req)
+                .additionalParameters(params)
+                .build();
     }
 }
 

@@ -7,7 +7,6 @@ import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
-import UsernameSetupForm from "@/components/auth/UsernameSetupForm";
 
 export default function AdminLayout({
   children,
@@ -15,7 +14,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
-  const { user, isLoading, isAuthenticated, needsUsername } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -27,7 +26,7 @@ export default function AdminLayout({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
-        <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" aria-label="Loading" />
       </div>
     );
   }
@@ -36,31 +35,21 @@ export default function AdminLayout({
     return null;
   }
 
-  if (needsUsername) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
-        <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-sm border border-gray-200 dark:bg-gray-900 dark:border-gray-800">
-          <UsernameSetupForm />
-        </div>
-      </div>
-    );
-  }
-
   const mainContentMargin = isMobileOpen
     ? "ml-0"
     : isExpanded || isHovered
-    ? "lg:ml-[290px]"
-    : "lg:ml-[90px]";
+    ? "lg:ml-[260px]"
+    : "lg:ml-[76px]";
 
   return (
-    <div className="min-h-screen xl:flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 xl:flex">
       <AppSidebar />
       <Backdrop />
       <div
-        className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
+        className={`flex-1 transition-[margin] duration-300 ease-in-out ${mainContentMargin}`}
       >
         <AppHeader />
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+        <main className="mx-auto max-w-[1280px] p-4 md:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

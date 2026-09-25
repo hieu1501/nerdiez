@@ -2,11 +2,11 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { MessagesSquare, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessagesSquare, Pencil, Plus, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { markdownPlugins } from "@/app/components/markdown";
 import { useAuth } from "@/app/auth-provider";
-import { CompactLoading } from "@/app/components/content-ui";
+import { Avatar, CompactLoading, pagerButton } from "@/app/components/content-ui";
 import { personalErrorMessage } from "@/app/me/personal-feedback";
 import { ApiError, type SliceResponse } from "@/lib/api";
 import { createTalk, patchTalk, deletePersonalContent, fetchPersonalTalks, type PersonalTalkContentDTO } from "@/lib/personal-api";
@@ -141,34 +141,42 @@ function DiscussionSession({ topicPublicUri, view, page, children }: Props) {
   const editor = draft && <TalkEditor key={draft.publicUri ?? "new"} draft={draft} pending={pending} error={error} recovered={recovered} update={update} submit={save} cancel={discard} />;
   return <DiscussionContext.Provider value={{ draft, editor, pending, recovered, edit: open, remove, navigate }}>
     <div className="flex flex-wrap items-center justify-between gap-4">
-      <h2 id="discussion-heading" className="flex items-center gap-2 text-lg font-bold"><MessagesSquare className="h-4 w-4 text-muted" aria-hidden="true" />Discussion</h2>
-      <button type="button" disabled={pending || status === "checking" || status === "error"} onClick={() => open()} className="inline-flex items-center gap-1.5 rounded-md bg-button px-3 py-2 text-xs font-bold text-button-text disabled:opacity-50"><Plus className="h-3.5 w-3.5" aria-hidden="true" />Add reply</button>
+      <div>
+        <h2 id="discussion-heading" className="flex items-center gap-2 text-lg font-bold tracking-tight"><MessagesSquare className="h-5 w-5 text-accent" aria-hidden="true" />Explanations</h2>
+        <p className="mt-0.5 text-sm text-muted">Explain it in the simplest way you can. Helpful answers get voted up.</p>
+      </div>
+      <button type="button" disabled={pending || status === "checking" || status === "error"} onClick={() => open()} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-button px-3.5 text-sm font-semibold text-button-text transition-colors hover:bg-accent-hover disabled:opacity-50"><Plus className="h-4 w-4" aria-hidden="true" />Add explanation</button>
     </div>
-    <nav aria-label="Discussion filter" className="mt-5 flex gap-5 border-b border-line">
-      {(["all", "mine"] as const).map((tab) => <button key={tab} type="button" disabled={pending} aria-current={view === tab ? "page" : undefined} onClick={() => navigate(tab, 1)} className={`-mb-px border-b-2 pb-2.5 text-xs disabled:opacity-50 ${view === tab ? "border-ink font-bold" : "border-transparent text-muted"}`}>{tab === "all" ? "All replies" : "My replies"}</button>)}
+    <nav aria-label="Discussion filter" className="mt-5 inline-flex rounded-lg bg-soft p-1">
+      {(["all", "mine"] as const).map((tab) => <button key={tab} type="button" disabled={pending} aria-current={view === tab ? "page" : undefined} onClick={() => navigate(tab, 1)} className={`rounded-md px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${view === tab ? "bg-surface font-semibold text-ink shadow-card" : "text-muted hover:text-ink"}`}>{tab === "all" ? "All replies" : "My replies"}</button>)}
     </nav>
-    {status === "error" && <p role="alert" className="mt-4 text-sm">Could not check your session. <button type="button" onClick={retryProfile} className="underline">Retry</button></p>}
-    {notice && <p role="status" className="mt-4 text-sm text-upvote">{notice}</p>}
+    {status === "error" && <p role="alert" className="mt-4 text-sm">Could not check your session. <button type="button" onClick={retryProfile} className="font-semibold text-accent underline">Retry</button></p>}
+    {notice && <p role="status" className="mt-4 rounded-lg bg-accent-soft px-3.5 py-2.5 text-sm font-medium text-accent">{notice}</p>}
     {storageWarning && <p role="status" className="mt-4 text-sm text-muted">Draft recovery is unavailable. Copy your writing before leaving.</p>}
     {draft && (!draft.publicUri || recovered) && editor}
-    {view === "all" ? children : status === "authenticated" && profile ? <MyTalks key={`${page}:${reload}`} topicPublicUri={topicPublicUri} page={page} username={profile.username} /> : status === "checking" ? <CompactLoading label="Checking session" /> : status !== "error" && <div className="py-10 text-center"><button type="button" onClick={() => requestSignIn("Sign in to view your replies.")} className="rounded-lg border border-line px-4 py-2 text-sm">Sign in to view your replies</button></div>}
-    <dialog ref={dialog} aria-labelledby="delete-talk-title" aria-describedby="delete-talk-description" onCancel={(event) => { event.preventDefault(); if (!lock.current) setSelected(null); }} onClose={() => { if (!lock.current) setSelected(null); }} className="fixed inset-0 m-auto w-[min(90vw,26rem)] rounded-lg border border-line bg-paper p-5 text-ink backdrop:bg-ink/50">
-      <h2 id="delete-talk-title" className="text-xl font-bold">Delete reply?</h2><p id="delete-talk-description" className="mt-3 text-sm text-muted">This permanently deletes your reply. This cannot be undone.</p>
-      {deleteError && <p role="alert" className="mt-4 text-sm text-downvote">{deleteError}</p>}
-      <div className="mt-6 flex justify-end gap-3"><button type="button" autoFocus disabled={pending} onClick={() => setSelected(null)} className="rounded-lg border border-line px-4 py-2 text-sm">Cancel</button><button type="button" disabled={pending} onClick={confirmDelete} className="rounded-lg bg-downvote px-4 py-2 text-sm font-bold text-paper disabled:opacity-50">{pending ? "Deleting…" : "Delete reply"}</button></div>
+    {view === "all" ? children : status === "authenticated" && profile ? <MyTalks key={`${page}:${reload}`} topicPublicUri={topicPublicUri} page={page} username={profile.username} /> : status === "checking" ? <CompactLoading label="Checking session" /> : status !== "error" && <div className="card mt-4 py-10 text-center"><button type="button" onClick={() => requestSignIn("Sign in to view your replies.")} className="inline-flex h-9 items-center rounded-lg bg-button px-4 text-sm font-semibold text-button-text hover:bg-accent-hover">Sign in to view your replies</button></div>}
+    <dialog ref={dialog} aria-labelledby="delete-talk-title" aria-describedby="delete-talk-description" onCancel={(event) => { event.preventDefault(); if (!lock.current) setSelected(null); }} onClose={() => { if (!lock.current) setSelected(null); }} className="fixed inset-0 m-auto w-[min(90vw,26rem)] rounded-2xl border border-line bg-surface p-6 text-ink shadow-pop backdrop:bg-black/50">
+      <h2 id="delete-talk-title" className="text-lg font-bold">Delete reply?</h2><p id="delete-talk-description" className="mt-3 text-sm text-muted">This permanently deletes your reply. This cannot be undone.</p>
+      {deleteError && <p role="alert" className="mt-4 text-sm text-danger">{deleteError}</p>}
+      <div className="mt-6 flex justify-end gap-3"><button type="button" autoFocus disabled={pending} onClick={() => setSelected(null)} className="h-9 rounded-lg border border-line px-4 text-sm font-medium hover:bg-soft">Cancel</button><button type="button" disabled={pending} onClick={confirmDelete} className="h-9 rounded-lg bg-danger px-4 text-sm font-semibold text-white disabled:opacity-50">{pending ? "Deleting…" : "Delete reply"}</button></div>
     </dialog>
   </DiscussionContext.Provider>;
 }
 
-export function TalkEntry({ talk, author, count, children }: { talk: EditableTalk; author: string; count: number; children: ReactNode }) {
+// Edit/Delete live only in My replies; All replies is for reading and voting.
+export function TalkEntry({ talk, author, count, footer, manage = false, children }: { talk: EditableTalk; author: string; count: number; footer?: ReactNode; manage?: boolean; children: ReactNode }) {
   const { profile } = useAuth();
   const { draft, editor, pending, recovered, edit, remove } = useDiscussion();
-  const owned = profile?.username === author;
+  const owned = manage && profile?.username === author;
   // Recovered editors appear above the list even if their talk is on another page.
   const editing = owned && draft?.publicUri === talk.publicUri;
+  if (editing && !recovered) return editor;
   return <>
-    {owned && <div className="mt-4 flex justify-end gap-4 text-xs text-muted"><button type="button" disabled={pending} onClick={() => edit(talk)} className="inline-flex items-center gap-1.5 hover:text-ink disabled:opacity-50"><Pencil className="h-3.5 w-3.5" aria-hidden="true" />Edit</button><button type="button" disabled={pending} onClick={() => remove(talk, count)} className="inline-flex items-center gap-1.5 hover:text-downvote disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" aria-hidden="true" />Delete</button></div>}
-    {editing && !recovered ? editor : children}
+    {children}
+    {(footer || owned) && <div className="mt-2 flex flex-wrap items-center justify-between gap-3 sm:pl-8">
+      <div>{footer}</div>
+      {owned && <div className="flex gap-1 text-xs"><button type="button" disabled={pending} onClick={() => edit(talk)} className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-muted transition-colors hover:bg-soft hover:text-ink disabled:opacity-50"><Pencil className="h-3.5 w-3.5" aria-hidden="true" />Edit</button><button type="button" disabled={pending} onClick={() => remove(talk, count)} className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-muted transition-colors hover:bg-soft hover:text-danger disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" aria-hidden="true" />Delete</button></div>}
+    </div>}
   </>;
 }
 
@@ -176,9 +184,9 @@ export function TalkPagination({ page, hasPrevious, hasNext, view = "all" }: { p
   const { navigate, pending } = useDiscussion();
   if (!hasPrevious && !hasNext) return null;
   return <nav aria-label="Discussion pages" className="mt-8 flex items-center justify-center gap-3 text-sm">
-    {hasPrevious && page > 1 && <button type="button" disabled={pending} onClick={() => navigate(view, page - 1)} className="rounded-md border border-line px-4 py-2">Previous</button>}
-    <span aria-current="page" className="text-muted">Page {page}</span>
-    {hasNext && <button type="button" disabled={pending} onClick={() => navigate(view, page + 1)} className="rounded-md border border-line px-4 py-2">Next</button>}
+    {hasPrevious && page > 1 && <button type="button" disabled={pending} onClick={() => navigate(view, page - 1)} className={pagerButton}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Previous</button>}
+    <span aria-current="page" className="min-w-16 text-center text-muted">Page {page}</span>
+    {hasNext && <button type="button" disabled={pending} onClick={() => navigate(view, page + 1)} className={pagerButton}>Next<ChevronRight className="h-4 w-4" aria-hidden="true" /></button>}
   </nav>;
 }
 
@@ -198,16 +206,16 @@ function MyTalks({ topicPublicUri, page, username }: { topicPublicUri: string; p
     });
     return () => { cancelled = true; };
   }, [topicPublicUri, page, username, attempt, expireSession]);
-  if (error) return <div role="alert" className="py-8 text-sm"><p>{error}</p><button type="button" onClick={() => { setError(null); setAttempt((value) => value + 1); }} className="mt-3 underline">Retry</button></div>;
+  if (error) return <div role="alert" className="card mt-4 p-5 text-sm"><p>{error}</p><button type="button" onClick={() => { setError(null); setAttempt((value) => value + 1); }} className="mt-3 font-semibold text-accent underline">Retry</button></div>;
   if (!slice) return <CompactLoading label="Loading your replies" />;
   return <>
-    {!slice.items.length && <p className="py-10 text-sm text-muted">{page > 1 ? "No replies on this page." : "You have no replies in this topic."}</p>}
+    {!slice.items.length && <div className="card mt-4 px-5 py-10 text-center text-sm text-muted">{page > 1 ? "No replies on this page." : "You haven’t explained this topic yet."}</div>}
     {slice.items.map((talk) => {
       const publicUri = publicIdentifier(talk.canonicalUri, "talks", "personal");
-      return <article key={publicUri} id={`talk-${publicUri}`} className="scroll-mt-20 border-b border-line py-6">
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted"><span className="font-bold text-ink">{username}</span><time dateTime={talk.createdAt}>{formatDate(talk.createdAt)}</time>{!talk.isActive && <span className="rounded border border-line px-2 py-1">Not public</span>}{talk.updatedAt !== talk.createdAt && <span>Updated <time dateTime={talk.updatedAt}>{formatDate(talk.updatedAt)}</time></span>}</div>
-        <TalkEntry talk={{ publicUri, content: talk.content }} author={username} count={slice.items.length}>
-          <div className="reader-content mt-5"><ReactMarkdown remarkPlugins={[remarkGfm]}>{talk.content}</ReactMarkdown></div>
+      return <article key={publicUri} id={`talk-${publicUri}`} className="card mt-2 scroll-mt-24 px-3.5 py-3 sm:px-4">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted"><Avatar name={username} size="sm" /><span className="text-[13px] font-semibold text-ink">{username}</span><span aria-hidden="true">·</span><time dateTime={talk.createdAt}>{formatDate(talk.createdAt)}</time>{!talk.isActive && <span className="rounded-full bg-highlight-soft px-2 py-0.5 font-medium text-highlight">Not public</span>}{talk.updatedAt !== talk.createdAt && <span>Updated <time dateTime={talk.updatedAt}>{formatDate(talk.updatedAt)}</time></span>}</div>
+        <TalkEntry talk={{ publicUri, content: talk.content }} author={username} count={slice.items.length} manage>
+          <div className="reader-content reader-dense mt-1.5 sm:pl-8"><ReactMarkdown remarkPlugins={markdownPlugins}>{talk.content}</ReactMarkdown></div>
         </TalkEntry>
       </article>;
     })}

@@ -1,30 +1,28 @@
 "use client";
 
-import { PlusIcon } from "@/icons";
+import { Plus } from "lucide-react";
 
 interface PageHeaderProps {
   title: string;
   onAdd: () => void;
   addLabel: string;
   disabled?: boolean;
+  description?: string;
 }
 
-export default function PageHeader({ title, onAdd, addLabel, disabled }: PageHeaderProps) {
+export default function PageHeader({ title, onAdd, addLabel, disabled, description }: PageHeaderProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-      <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-        {title}
-      </h2>
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{title}</h2>
+        {description && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>}
+      </div>
       <button
         onClick={onAdd}
         disabled={disabled}
-        className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium ${
-          disabled
-            ? "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
-            : "bg-brand-500 text-white hover:bg-brand-600"
-        }`}
+        className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
       >
-        <PlusIcon />
+        <Plus className="h-4 w-4" aria-hidden="true" />
         {addLabel}
       </button>
     </div>

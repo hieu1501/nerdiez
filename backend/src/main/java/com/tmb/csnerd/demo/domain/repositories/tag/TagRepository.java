@@ -47,5 +47,5 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
         SELECT t FROM Tag t
         WHERE t.slug IN :tagSlugs AND t.isActive = true
     """)
-    Set<Tag> getActiveTagsBySlugNames(@Param("slugs") Set<String> tagSlugs);
+    Set<Tag> getActiveTagsBySlugNames(@Param("tagSlugs") Set<String> tagSlugs);
 }

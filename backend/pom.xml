@@ -41,6 +41,10 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
@@ -48,15 +52,18 @@
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- Spring Boot 4 moved FlywayAutoConfiguration to its own module; flyway-core/flyway-mysql alone won't autoconfigure without this. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-core</artifactId>
-			<version>12.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-mysql</artifactId>
-			<version>12.0.2</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -114,6 +121,20 @@
 			<version>0.29.0</version>
 			<scope>compile</scope>
 		</dependency>
+		<!-- Source: https://mvnrepository.com/artifact/software.amazon.awssdk/s3 -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.55.0</version>
+			<scope>compile</scope>
+		</dependency>
+		<!-- s3 only declares this as test-scope; needed at compile scope or S3Client throws at startup. -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>apache-client</artifactId>
+			<version>2.55.0</version>
+			<scope>compile</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -127,9 +148,9 @@
 				<artifactId>flyway-maven-plugin</artifactId>
 				<version>12.0.2</version>
 				<configuration>
-					<url>jdbc:mysql://localhost:3306/nerdy</url>
-					<user>root</user>
-					<password>1501</password>
+					<url>${env.SPRING_DATASOURCE_URL}</url>
+					<user>${env.SPRING_DATASOURCE_USERNAME}</user>
+					<password>${env.SPRING_DATASOURCE_PASSWORD}</password>
 				</configuration>
 			</plugin>
 			<plugin>

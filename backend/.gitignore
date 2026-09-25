@@ -33,5 +33,5 @@ build/
 .vscode/
 /src/main/resources/certs/
 
-/requirements.md
-/uploads
+### Agents
+requirements.md

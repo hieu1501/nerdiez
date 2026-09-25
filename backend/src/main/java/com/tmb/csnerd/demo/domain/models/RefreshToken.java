@@ -14,7 +14,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "refresh_tokens", schema = "nerdy")
+@Table(name = "refresh_tokens", schema = "nerdiez")
 public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

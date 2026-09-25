@@ -38,7 +38,6 @@ import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/admin/api/talks")
 public class AdminTalkController {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("createdAt", "updatedAt");
 

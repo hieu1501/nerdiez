@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useState, useContext, useEffect } from "react";
+import { createContext, useState, useContext } from "react";
 
 type Theme = "light" | "dark";
 
@@ -15,31 +15,21 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [theme, setTheme] = useState<Theme>("light");
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    // This code will only run on the client side
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    const initialTheme = savedTheme || "light"; // Default to light theme
-
-    setTheme(initialTheme);
-    setIsInitialized(true);
-  }, []);
-
-  useEffect(() => {
-    if (isInitialized) {
-      localStorage.setItem("theme", theme);
-      if (theme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    }
-  }, [theme, isInitialized]);
+  // The root layout's inline script already applied the saved theme class.
+  const [theme, setTheme] = useState<Theme>(() =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"
+  );
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+    const next: Theme = theme === "light" ? "dark" : "light";
+    const root = document.documentElement;
+    root.classList.add("theme-switching");
+    root.classList.toggle("dark", next === "dark");
+    // Force a style flush before re-enabling transitions, or they'd still animate.
+    void getComputedStyle(root).color;
+    setTimeout(() => root.classList.remove("theme-switching"), 0);
+    try { localStorage.setItem("theme", next); } catch {}
+    setTheme(next);
   };
 
   return (

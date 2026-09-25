@@ -6,13 +6,13 @@ export default function ArticleLoading() {
       aria-label="Loading article"
     >
       <div className="min-w-0">
-        <div className="aspect-[2/1] w-full animate-pulse rounded-lg bg-soft" />
-        <div className="mt-8 h-4 w-32 animate-pulse rounded bg-soft" />
+        <div className="h-6 w-32 animate-pulse rounded-full bg-soft" />
         <div className="mt-5 h-11 w-4/5 animate-pulse rounded bg-soft" />
         <div className="mt-3 h-11 w-3/5 animate-pulse rounded bg-soft" />
         <div className="mt-5 h-5 w-full animate-pulse rounded bg-soft" />
         <div className="mt-2 h-5 w-3/4 animate-pulse rounded bg-soft" />
-        <div className="mt-6 h-12 w-full animate-pulse rounded bg-soft" />
+        <div className="mt-6 h-8 w-64 animate-pulse rounded bg-soft" />
+        <div className="mt-7 aspect-[2/1] w-full animate-pulse rounded-2xl bg-soft" />
         <div className="mt-10 space-y-3">
           <div className="h-4 w-full animate-pulse rounded bg-soft" />
           <div className="h-4 w-full animate-pulse rounded bg-soft" />

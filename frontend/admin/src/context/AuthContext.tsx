@@ -9,20 +9,22 @@ import {
 } from "react";
 import { api, ApiError } from "@/services/api";
 
+// Mirrors the backend's UserProfileResponseDTO from /api/profile/me
 interface User {
-  email: string;
-  username?: string;
-  name?: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  needsUsername: boolean;
   signOut: () => Promise<void>;
-  setUsername: (username: string) => Promise<void>;
 }
+
+// Pages a signed-out visitor must be able to see; /forbidden is reached right after a rejected login.
+const PUBLIC_PATHS = ["/signin", "/forbidden"];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -49,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = user !== null;
-  const needsUsername = user !== null && !user.username;
 
   useEffect(() => {
     let isActive = true;
@@ -68,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           if (
             typeof window !== "undefined" &&
-            !window.location.pathname.startsWith("/signin")
+            !PUBLIC_PATHS.some((path) => window.location.pathname.startsWith(path))
           ) {
             window.location.href = "/signin";
           }
@@ -95,30 +96,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     storeUser(null);
   };
 
-  const setUsername = async (newUsername: string) => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      const updated = await api.post<User>("/auth/username", {
-        username: newUsername,
-      }, false);
-      const merged = { ...user, ...updated, username: newUsername };
-      setUser(merged);
-      storeUser(merged);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
         user,
         isLoading,
         isAuthenticated,
-        needsUsername,
         signOut,
-        setUsername,
       }}
     >
       {children}

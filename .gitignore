@@ -1,1 +1,7 @@
 /design/
+secrets/*.txt
+.env
+.env.keycloak
+.env.spring
+nginx/certs/
+/.claude/

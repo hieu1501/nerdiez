@@ -74,6 +74,15 @@ public class RefreshTokenService {
                 });
     }
 
+    public Optional<User> findOwner(String rawToken) {
+        return refreshTokenRepository.findActiveOwnerByTokenHash(hash(rawToken));
+    }
+
+    @Transactional
+    public void revokeAll(User user) {
+        refreshTokenRepository.revokeAllByUserId(user.getId(), Instant.now());
+    }
+
     private String generateRefreshToken(User user) {
         String rawToken = generateRawToken();
         RefreshToken refreshToken = new RefreshToken();

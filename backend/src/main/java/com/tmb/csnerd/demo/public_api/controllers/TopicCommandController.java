@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("api/topics")
 public class TopicCommandController {
-    private TopicCommandService topicCommandService;
-    private UserPrincipalService userPrincipalService;
+    private final TopicCommandService topicCommandService;
+    private final UserPrincipalService userPrincipalService;
 
     @PostMapping(
         consumes = MediaType.APPLICATION_JSON_VALUE,

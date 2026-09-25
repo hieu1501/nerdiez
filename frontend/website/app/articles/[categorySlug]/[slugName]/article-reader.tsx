@@ -1,11 +1,12 @@
 import { isValidElement } from "react";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays } from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock3 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { markdownPlugins } from "@/app/components/markdown";
 import type { PublicPostDetailDTO } from "@/lib/api";
 import ArticleVotes from "./article-votes";
-import { Tags } from "@/app/components/content-ui";
+import { Avatar, readingMinutes, Tags } from "@/app/components/content-ui";
+import { SubjectChip } from "@/app/components/subject";
 import { categoryHref } from "@/lib/resource-links";
 import ArticleTableOfContents, { type TableOfContentsItem } from "./article-table-of-contents";
 
@@ -92,64 +93,56 @@ export default function ArticleReader({
   const publishedAt = formatDate(article.content.createdAt);
 
   return (
-    <div className={`mx-auto w-full max-w-[1180px] px-4 sm:px-6 ${inModal ? "pb-12 pt-5" : "py-7 sm:py-10"}`}>
+    <div className={`mx-auto w-full max-w-[1180px] px-4 sm:px-6 ${inModal ? "pb-12 pt-6" : "py-7 sm:py-10"}`}>
       <div className="grid gap-10 min-[1180px]:grid-cols-[minmax(0,760px)_220px] min-[1180px]:justify-center min-[1180px]:gap-12">
         <article className="mx-auto w-full max-w-[760px] min-w-0">
+          <header>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              {!inModal && <Link href={categoryHref(categorySlug)} aria-label={`Back to ${categoryName}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted no-underline transition-colors hover:bg-soft hover:text-ink">
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              </Link>}
+              <Link href={categoryHref(categorySlug)} className="no-underline"><SubjectChip slug={categorySlug} name={categoryName} /></Link>
+              <Tags tags={article.content.tags} />
+            </div>
+
+            <h1 className="mt-4 text-[clamp(1.5rem,3.2vw,2rem)] font-bold leading-[1.2] tracking-[-0.022em]">
+              {article.content.title}
+            </h1>
+
+            {article.content.description && (
+              <p className="mt-2.5 max-w-[64ch] text-[15px] leading-6 text-muted">
+                {article.content.description}
+              </p>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-muted" aria-label="Article details">
+              <span className="inline-flex items-center gap-2.5">
+                <Avatar name={article.content.author.username} />
+                <span className="font-semibold text-ink">{article.content.author.username}</span>
+              </span>
+              {publishedAt && <time dateTime={article.content.createdAt} className="inline-flex items-center gap-1.5">
+                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                {publishedAt}
+              </time>}
+              <span className="inline-flex items-center gap-1.5"><Clock3 className="h-4 w-4" aria-hidden="true" />{readingMinutes(article.content.content)} min read</span>
+            </div>
+          </header>
+
           {article.content.featuredImage && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={article.content.featuredImage}
               alt=""
               loading="lazy"
-              className="aspect-[2/1] w-full rounded-lg border border-line bg-soft object-cover shadow-[0_18px_50px_-32px_rgba(0,0,0,0.5)]"
+              className="mt-5 aspect-[2/1] w-full rounded-2xl border border-line bg-soft object-cover"
             />
           )}
 
-          <header className={article.content.featuredImage ? "mt-7 sm:mt-9" : ""}>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-              <Link
-                href={categoryHref(categorySlug)}
-                className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.13em] text-muted no-underline transition-colors hover:text-ink"
-              >
-                {!inModal && <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />}
-                {categoryName}
-              </Link>
-              <span className="h-px w-7 bg-line" aria-hidden="true" />
-              <Tags tags={article.content.tags} />
-            </div>
-
-            <h1 className="mt-5 max-w-[18ch] text-[clamp(2rem,5vw,3.25rem)] font-bold leading-[1.08] tracking-[-0.035em]">
-              {article.content.title}
-            </h1>
-
-            {article.content.description && (
-              <p className="mt-5 max-w-[64ch] text-base leading-7 text-muted sm:text-lg sm:leading-8">
-                {article.content.description}
-              </p>
-            )}
-
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 border-y border-line py-3 text-xs text-muted">
-              <span className="inline-flex items-center gap-2" aria-label="Author">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
-                  {article.content.author.username.charAt(0).toUpperCase()}
-                </span>
-                <span className="text-sm">
-                  <span className="mr-1 text-muted">By</span>
-                  <span className="text-ink">{article.content.author.username}</span>
-                </span>
-              </span>
-              {publishedAt && <time dateTime={article.content.createdAt} className="ml-auto inline-flex items-center gap-1.5">
-                <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                {publishedAt}
-              </time>}
-            </div>
-          </header>
-
           {toc.length > 0 && <div className="min-[1180px]:hidden"><ArticleTableOfContents items={toc} presentation={presentation} /></div>}
 
-          <div className="reader-content pt-8 sm:pt-10">
+          <div className="reader-content pt-5 sm:pt-6">
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={markdownPlugins}
               components={{
                 h1: ({ children }) => (
                   <h1 id={nextHeadingId(textFromChildren(children))} className="scroll-mt-24">
@@ -172,7 +165,11 @@ export default function ArticleReader({
             </ReactMarkdown>
           </div>
 
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5">
+          <div className="card mt-8 flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+            <div>
+              <p className="text-sm font-semibold">Was this helpful?</p>
+              <p className="text-xs text-muted">Your vote helps others find clear explanations.</p>
+            </div>
             <ArticleVotes
               key={publicUri}
               publicUri={publicUri}

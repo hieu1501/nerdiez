@@ -11,8 +11,8 @@ export function personalErrorMessage(error: unknown): string {
   return "We couldn’t complete that request. Please try again in a moment.";
 }
 export function PersonalFailure({ error, retry }: { error: unknown; retry: () => void }) {
-  return <div className="rounded-lg border border-line px-5 py-10 text-center" role="alert">
-    <p className="font-bold">{personalErrorMessage(error)}</p>
-    <div className="mt-5 flex justify-center gap-5 text-sm"><button type="button" onClick={retry} className="underline underline-offset-4">Retry</button><Link href="/me" className="underline underline-offset-4">My content</Link></div>
+  return <div className="card px-5 py-10 text-center" role="alert">
+    <p className="font-semibold">{personalErrorMessage(error)}</p>
+    <div className="mt-5 flex justify-center gap-2 text-sm"><button type="button" onClick={retry} className="h-9 rounded-lg bg-button px-3.5 font-semibold text-button-text hover:bg-accent-hover">Retry</button><Link href="/me" className="inline-flex h-9 items-center rounded-lg border border-line px-3.5 font-medium no-underline hover:bg-soft">My content</Link></div>
   </div>;
 }

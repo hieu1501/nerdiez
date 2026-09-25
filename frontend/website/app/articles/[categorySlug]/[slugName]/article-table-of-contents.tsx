@@ -8,13 +8,9 @@ export interface TableOfContentsItem {
   level: number;
 }
 
-function indent(level: number): string {
-  if (level === 3) return "pl-7";
-  if (level === 2) return "pl-4";
-  return "pl-3";
-}
-
+// Indent by depth below the shallowest heading, so an article starting at H2 isn't pushed right.
 function ContentsLinks({ items, activeId }: { items: TableOfContentsItem[]; activeId: string }) {
+  const topLevel = Math.min(...items.map((item) => item.level));
   return <nav className="mt-4 border-l border-line" aria-label="Table of contents">
     {items.map((item) => {
       const active = item.id === activeId;
@@ -22,7 +18,8 @@ function ContentsLinks({ items, activeId }: { items: TableOfContentsItem[]; acti
         key={item.id}
         href={`#${item.id}`}
         aria-current={active ? "location" : undefined}
-        className={`-ml-px block border-l-2 py-1.5 text-[13px] leading-5 no-underline transition-colors ${indent(item.level)} ${active ? "border-ink font-bold text-ink" : "border-transparent text-muted hover:border-line hover:text-ink"}`}
+        style={{ paddingLeft: `${12 + (item.level - topLevel) * 14}px` }}
+        className={`-ml-px block border-l-2 py-1.5 pr-1 text-[13px] leading-5 no-underline transition-colors ${active ? "border-accent font-semibold text-accent" : "border-transparent text-muted hover:border-line hover:text-ink"}`}
       >
         {item.text}
       </a>;
@@ -57,14 +54,14 @@ export default function ArticleTableOfContents({ items, presentation = "page" }:
   }, [items]);
 
   return <>
-    <details className="mt-8 rounded-lg border border-line bg-soft/45 px-4 py-3 min-[1180px]:hidden">
-      <summary className="cursor-pointer select-none text-sm font-bold">Table of contents</summary>
+    <details className="card mt-8 px-4 py-3 min-[1180px]:hidden">
+      <summary className="cursor-pointer select-none text-sm font-semibold">On this page</summary>
       <ContentsLinks items={items} activeId={activeId} />
     </details>
 
     <aside className="hidden h-full min-[1180px]:block" aria-label="Article navigation">
       <div className={`sticky overflow-y-auto pr-2 ${stickyPosition}`}>
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted">Table of contents</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">On this page</p>
         <ContentsLinks items={items} activeId={activeId} />
       </div>
     </aside>

@@ -4,7 +4,6 @@ import com.tmb.csnerd.demo.domain.models.Post;
 import com.tmb.csnerd.demo.domain.services.fingerprint.IFingerprintData;
 import com.tmb.csnerd.demo.dto.category.publicresponse.CategoryPublicRefDTO;
 import com.tmb.csnerd.demo.dto.tag.publicresponse.TagPublicRefDTO;
-import com.tmb.csnerd.demo.dto.user.UserRefDTO;
 
 import java.net.URI;
 import java.time.Instant;
@@ -14,7 +13,7 @@ import java.util.List;
 public record PublicPostBriefContentDTO(
     String slugName,
     String title,
-    UserRefDTO author,
+    String description,
     CategoryPublicRefDTO category,
     List<TagPublicRefDTO> tags,
     Instant createdAt,
@@ -26,7 +25,7 @@ public record PublicPostBriefContentDTO(
         String representation,
         String slugName,
         Instant updatedAt,
-        UserRefDTO author,
+        String description,
         CategoryPublicRefDTO category,
         List<TagPublicRefDTO> tags
     ) implements IFingerprintData {}
@@ -35,7 +34,7 @@ public record PublicPostBriefContentDTO(
         return new PublicPostBriefContentDTO(
             post.getSlug(),
             post.getTitle(),
-            UserRefDTO.from(post.getAuthor()),
+            post.getDescription(),
             CategoryPublicRefDTO.from(post.getCategory()),
             post.getTags().stream().map(TagPublicRefDTO::from).sorted(Comparator.comparing(TagPublicRefDTO::slugName)).toList(),
             post.getCreatedAt(),
@@ -45,11 +44,11 @@ public record PublicPostBriefContentDTO(
         );
     }
 
-    public static PublicPostBriefContentDTO from(String slug, String title, UserRefDTO author, CategoryPublicRefDTO category, List<TagPublicRefDTO> tags, Instant createdAt, Instant updatedAt, String featuredImage, URI canonicalUri) {
+    public static PublicPostBriefContentDTO from(String slug, String title, String description, CategoryPublicRefDTO category, List<TagPublicRefDTO> tags, Instant createdAt, Instant updatedAt, String featuredImage, URI canonicalUri) {
         return new PublicPostBriefContentDTO(
                 slug,
                 title,
-                author,
+                description,
                 category,
                 tags,
                 createdAt,
@@ -60,6 +59,6 @@ public record PublicPostBriefContentDTO(
     }
 
     public IFingerprintData getFingerprintData() {
-        return new FingerprintData("public-post-brief", slugName, updatedAt, author, category, tags);
+        return new FingerprintData("public-post-brief:v2", slugName, updatedAt, description, category, tags);
     }
 }

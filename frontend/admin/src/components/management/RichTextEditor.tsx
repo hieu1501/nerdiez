@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import MDEditor, {
   commands,
   executeCommand,
@@ -11,6 +11,7 @@ import MDEditor, {
 } from "@uiw/react-md-editor";
 import remarkBreaks from "remark-breaks";
 import { uploadFile } from "@/services/upload";
+import { ApiError } from "@/services/api";
 import { compressImage } from "@/lib/compress";
 
 interface RichTextEditorProps {
@@ -40,8 +41,10 @@ export default function RichTextEditor({
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<RefMDEditor>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleImageUpload = useCallback(async (file: File) => {
+    setUploadError(null);
     try {
       const compressed = await compressImage(file);
       const url = await uploadFile(compressed);
@@ -61,8 +64,8 @@ export default function RichTextEditor({
           ta.dispatchEvent(new Event("input", { bubbles: true }));
         }
       }
-    } catch {
-      // upload failed — silently ignore
+    } catch (e) {
+      setUploadError(e instanceof ApiError ? e.message : "Failed to upload image.");
     }
   }, []);
 
@@ -218,6 +221,11 @@ export default function RichTextEditor({
           { ...commands.codeBlock, icon: codeIcon },
         ]}
       />
+      {uploadError && (
+        <p role="alert" className="px-3 py-2 text-sm text-error-600 border-t border-gray-300 dark:border-gray-600 dark:text-error-400">
+          {uploadError}
+        </p>
+      )}
     </div>
   );
 }

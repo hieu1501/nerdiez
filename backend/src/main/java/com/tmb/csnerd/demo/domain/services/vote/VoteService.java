@@ -1,7 +1,7 @@
 package com.tmb.csnerd.demo.domain.services.vote;
 
-import com.tmb.csnerd.demo.domain.cache.talk.TalkVoteChangedEvent;
 import com.tmb.csnerd.demo.domain.cache.vote.PostVoteChangedEvent;
+import com.tmb.csnerd.demo.domain.cache.vote.TalkVoteChangedEvent;
 import com.tmb.csnerd.demo.domain.repositories.post.PostRepository;
 import com.tmb.csnerd.demo.domain.repositories.postvote.projections.PostVotesInformationProjection;
 import com.tmb.csnerd.demo.domain.repositories.postvote.PostVoteRepository;
@@ -101,6 +101,7 @@ public class VoteService {
         return new PostVoteResponseDTO(publicUri, vote, voteStats);
     }
 
+    @Transactional
     public TalkVoteResponseDTO setTalkVoteByPublicUri(String publicUri, UserPrincipal user, Byte vote) {
         requireAuthenticated(user);
         Long talkId = talkRepository.getActiveTalkIdByPublicUri(publicUri).orElseThrow(() -> new TalkByPublicUriNotFoundException(publicUri));

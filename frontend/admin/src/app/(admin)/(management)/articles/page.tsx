@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import Badge from "@/components/ui/badge/Badge";
 import Pagination from "@/components/tables/Pagination";
-import { ArrowDownIcon, ArrowUpIcon, SortIcon } from "@/icons";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 type SortField = "title" | "createdAt" | "updatedAt";
 type SortDir = "asc" | "desc";
@@ -51,12 +51,12 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
         {label}
         {active ? (
           direction === "asc" ? (
-            <ArrowUpIcon className="size-3 text-brand-500" />
+            <ArrowUp className="size-3 text-brand-500" />
           ) : (
-            <ArrowDownIcon className="size-3 text-brand-500" />
+            <ArrowDown className="size-3 text-brand-500" />
           )
         ) : (
-          <SortIcon className="size-3 opacity-40" />
+          <ArrowUpDown className="size-3 opacity-40" />
         )}
       </span>
     </TableCell>
@@ -127,10 +127,11 @@ export default function ArticlesPage() {
       )}
       <PageHeader
         title="Articles"
+        description="Experiences and use cases shared by writers."
         onAdd={() => router.push("/articles/new")}
         addLabel="Add Article"
       />
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-gray-500 text-sm">Loading...</div>
         ) : !data || data.items.length === 0 ? (
@@ -138,7 +139,7 @@ export default function ArticlesPage() {
         ) : (
           <>
             <Table>
-              <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+              <TableHeader className="border-b border-gray-100 bg-gray-50/60 dark:border-gray-800 dark:bg-white/[0.02]">
                 <TableRow>
                   <SortableHeader label="Title" field="title" activeField={sortField} direction={sortDir} onSort={handleSort} />
                   <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Author</TableCell>
@@ -151,7 +152,7 @@ export default function ArticlesPage() {
                   <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-end text-theme-xs dark:text-gray-400">Actions</TableCell>
                 </TableRow>
               </TableHeader>
-              <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {data.items.map(({ content: article, voteStats }) => (
                   <TableRow key={article.id}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
@@ -174,7 +175,7 @@ export default function ArticlesPage() {
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => router.push(`/articles/${article.id}`)}
-                          className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+                          className="text-gray-600 hover:text-brand-600 text-sm font-medium dark:text-gray-300 dark:hover:text-brand-400"
                         >
                           View
                         </button>

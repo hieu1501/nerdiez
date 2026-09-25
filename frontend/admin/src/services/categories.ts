@@ -23,7 +23,7 @@ export interface UpdateCategoryRequestDTO {
 }
 
 export const categoriesService = {
-  getAll: () => api.get<CategoryAdminDetailDTO[]>("/categories/all", true),
+  getAll: () => api.get<CategoryAdminDetailDTO[]>("/categories", true),
   create: (data: CreateCategoryRequestDTO) =>
     api.post<CategoryAdminDetailDTO>("/categories", data, true),
   update: (categoryId: number, data: UpdateCategoryRequestDTO) =>

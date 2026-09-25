@@ -15,7 +15,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "images", schema = "nerdy")
+@Table(name = "images", schema = "nerdiez")
 public class Image {
     @Id
     @Size(max = 45)

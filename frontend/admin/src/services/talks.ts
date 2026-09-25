@@ -21,12 +21,10 @@ export interface CreateTalkRequestDTO {
   isActive: boolean;
 }
 export type PatchTalkRequestDTO = Partial<Omit<CreateTalkRequestDTO, "topicId">>;
-// AdminTalkController combines its class prefix with complete method paths.
-// Isolate this compatibility detail until the backend routes are corrected.
-const talkPath = "/talks/admin/api/talks";
+const talkPath = "/talks";
 export const talksService = {
   getForTopic: (topicId: number, params?: PageQuery) =>
-    api.get<PageResponse<AdminTalkDTO>>(`/talks/admin/api/topic/${topicId}/talks${pageQuery(params)}`, true),
+    api.get<PageResponse<AdminTalkDTO>>(`/topic/${topicId}/talks${pageQuery(params)}`, true),
   create: (data: CreateTalkRequestDTO) => api.post<AdminTalkDTO>(talkPath, data, true),
   update: (id: number, data: PatchTalkRequestDTO) => api.patch<AdminTalkDTO>(`${talkPath}/${id}`, data, true),
   delete: (id: number) => api.delete<void>(`${talkPath}/${id}`, true),

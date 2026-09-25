@@ -7,7 +7,6 @@ import org.commonmark.node.Link;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.markdown.MarkdownRenderer;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -21,10 +20,7 @@ public class MarkdownUtils {
 
     private final MediaUtils mediaUtils;
 
-    public MarkdownUtils(@Value("${app.rule.allowed-media-hosts}") List<String> allowedMediaHosts,
-                                       @Value("${app.rule.allowed-media-schemes}") List<String> allowedMediaSchemes,
-                                       @Value("${app.rule.allowed-url-schemes}") List<String> allowedUrlSchemes,
-                                       MediaUtils mediaUtils) {
+    public MarkdownUtils(MediaUtils mediaUtils) {
         this.mediaUtils = mediaUtils;
     }
 
