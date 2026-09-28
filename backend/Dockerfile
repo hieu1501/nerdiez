@@ -11,6 +11,8 @@ RUN ./mvnw clean package -DskipTests -B
 
 # Runtime
 FROM eclipse-temurin:21-jre-jammy
+LABEL org.opencontainers.image.source=https://github.com/hieu1501/Nerdy
+
 WORKDIR /app
 
 RUN addgroup --system spring && adduser --system --ingroup spring spring

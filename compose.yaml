@@ -1,10 +1,19 @@
 name: nerdiez
 
+# Shared by every service: cap each container's logs at 3 × 10 MB.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   mysql:
     image: mysql:8.4
     container_name: mysql-container
     restart: unless-stopped
+    mem_limit: 768m
+    logging: *default-logging
     # Needed for V1.4__create_triggers.sql's CREATE FUNCTION statements (MySQL blocks
     # non-SUPER users from creating them otherwise).
     command: ["mysqld", "--log-bin-trust-function-creators=1"]
@@ -32,6 +41,8 @@ services:
     image: postgres:17
     container_name: nerdiez-keycloak-db-container
     restart: unless-stopped
+    mem_limit: 256m
+    logging: *default-logging
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
@@ -51,9 +62,12 @@ services:
 
   keycloak:
     container_name: nerdiez-keycloak-container
+    image: ghcr.io/hieu1501/nerdiez-keycloak:latest
     build:
       context: ./keycloak
     restart: unless-stopped
+    mem_limit: 1g
+    logging: *default-logging
     depends_on:
       keycloak-db:
         condition: service_healthy
@@ -76,6 +90,8 @@ services:
       # Keeps Spring's internal keycloak:8080 calls working regardless of KC_HOSTNAME.
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_PROXY_HEADERS: xforwarded
+      # Keycloak defaults to 70% heap; leave room for non-heap memory under the 1g cap.
+      JAVA_OPTS_KC_HEAP: "-XX:MaxRAMPercentage=60"
     secrets:
       - keycloak_db_password
       - keycloak_admin_password
@@ -91,9 +107,12 @@ services:
 
   spring:
     container_name: nerdiez-spring-container
+    image: ghcr.io/hieu1501/nerdiez-spring:latest
     build:
       context: ./backend
     restart: unless-stopped
+    mem_limit: 1g
+    logging: *default-logging
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
@@ -114,6 +133,8 @@ services:
       KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL} # Browser-facing; must match .env.keycloak's KC_HOSTNAME (differs per environment).
       RSA_PRIVATE_KEY: file:/run/secrets/rsa_private_key
       RSA_PUBLIC_KEY: file:/run/secrets/rsa_public_key
+      # JVM defaults to 25% of the cap for heap, too small at 1g.
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60"
     secrets:
       - db_password
       - keycloak_client_secret
@@ -125,9 +146,12 @@ services:
   # No published ports: browsers reach the frontends only through nginx.
   website:
     container_name: nerdiez-website-container
+    image: ghcr.io/hieu1501/nerdiez-website:latest
     build:
       context: ./frontend/website
     restart: unless-stopped
+    mem_limit: 256m
+    logging: *default-logging
     depends_on:
       - spring
     networks:
@@ -139,9 +163,12 @@ services:
 
   admin:
     container_name: nerdiez-admin-container
+    image: ghcr.io/hieu1501/nerdiez-admin:latest
     build:
       context: ./frontend/admin
     restart: unless-stopped
+    mem_limit: 256m
+    logging: *default-logging
     depends_on:
       - spring
     networks:
@@ -152,6 +179,8 @@ services:
     image: nginx:1.27-alpine
     container_name: nerdiez-nginx-container
     restart: unless-stopped
+    mem_limit: 64m
+    logging: *default-logging
     ports:
       - "80:80"
       - "443:443"
