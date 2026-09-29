@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 # Runtime: standalone output only, no npm or source code
 FROM base AS runtime
-LABEL org.opencontainers.image.source=https://github.com/hieu1501/Nerdy
+LABEL org.opencontainers.image.source=https://github.com/hieu1501/nerdiez
 
 # Docker sets HOSTNAME to the container id, which would make Next listen on it only
 ENV NODE_ENV=production \

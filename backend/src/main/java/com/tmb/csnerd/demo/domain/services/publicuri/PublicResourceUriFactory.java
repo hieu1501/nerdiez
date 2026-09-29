@@ -1,34 +1,13 @@
 package com.tmb.csnerd.demo.domain.services.publicuri;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
+// Root-relative so each client resolves it against the origin it reached the API through.
 @Component
 public class PublicResourceUriFactory {
-    private static final String API_PATH = "api";
-
-    private final String appScheme;
-    private final String appHost;
-    private final Integer appPort;
-    private final URI baseUri;
-
-    public PublicResourceUriFactory(@Value("${app.server.scheme}") String serverScheme,
-                            @Value("${app.server.host}") String serverHost,
-                            @Value("${app.server.port}") Integer serverPort) {
-        this.appScheme = serverScheme;
-        this.appHost = serverHost;
-        this.appPort = serverPort;
-        try {
-            this.baseUri = new URI(appScheme, null, appHost, appPort, null, null, null);;
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Illegal URI");
-        }
-    }
-
     public String createPublicUri(String slug, String publicKey) {
         return slug + "~" + publicKey;
     }
@@ -57,8 +36,7 @@ public class PublicResourceUriFactory {
     private URI build(String path, String publicUri) {
         validatePublicUri(publicUri);
 
-        return UriComponentsBuilder.fromUri(baseUri)
-                .path(path)
+        return UriComponentsBuilder.fromPath(path)
                 .encode()
                 .buildAndExpand(publicUri)
                 .toUri();

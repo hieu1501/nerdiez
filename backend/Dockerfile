@@ -11,7 +11,7 @@ RUN ./mvnw clean package -DskipTests -B
 
 # Runtime
 FROM eclipse-temurin:21-jre-jammy
-LABEL org.opencontainers.image.source=https://github.com/hieu1501/Nerdy
+LABEL org.opencontainers.image.source=https://github.com/hieu1501/nerdiez
 
 WORKDIR /app
 
