@@ -119,7 +119,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     </div>
     <footer className="w-full border-t border-line px-4 py-6">
       <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-3 text-xs text-muted sm:px-2">
-        <span className="inline-flex items-center gap-2"><BrandMark className="h-5 w-5" />Nerdiez</span>
+        <span className="inline-flex items-center gap-2"><BrandMark className="h-5 w-5" />nerdiez</span>
         <span>Read, ask, and explain — one topic at a time.</span>
       </div>
     </footer>
@@ -127,7 +127,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       onClick={(event) => { if (event.target === event.currentTarget) setDrawerOpen(false); }}
       className="m-0 h-dvh max-h-none w-[min(86vw,18rem)] max-w-none border-0 border-r border-line bg-paper p-0 text-ink shadow-pop backdrop:bg-black/45">
       <div className="flex h-16 items-center justify-between border-b border-line px-4">
-        <h2 id="subjects-drawer-title" className="flex items-center gap-2.5 text-[17px] font-bold"><BrandMark />Nerdiez</h2>
+        <h2 id="subjects-drawer-title" className="flex items-center gap-2.5 text-[17px] font-bold"><BrandMark />nerdiez</h2>
         <button type="button" autoFocus onClick={() => setDrawerOpen(false)} aria-label="Close subjects" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-soft hover:text-ink"><X className="h-5 w-5" /></button>
       </div>
       <div className="overflow-y-auto px-3 py-5"><Rail subjectProps={subjectProps} signedIn={signedIn} close={() => setDrawerOpen(false)} /></div>

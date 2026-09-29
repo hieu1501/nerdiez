@@ -59,7 +59,7 @@ export default function Dashboard() {
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Welcome back{user?.displayName ? `, ${user.displayName}` : ""}</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Here’s what needs attention on Nerdiez today.</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Here’s what needs attention on nerdiez today.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Link href="/articles/new" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 text-sm font-medium text-white hover:bg-brand-600"><Plus className="h-4 w-4" />New article</Link>

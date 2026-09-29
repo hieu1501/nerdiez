@@ -71,7 +71,7 @@ export default function Header({ navigationOpen, onOpenNavigation }: { navigatio
           <button type="button" onClick={onOpenNavigation} aria-label="Open subjects" aria-expanded={navigationOpen} aria-controls="subjects-drawer" className={`${iconButton} lg:hidden`}><Menu className="h-5 w-5" /></button>
           <Link href="/categories" className="flex items-center gap-2.5 rounded-lg no-underline">
             <BrandMark />
-            <span className="text-[17px] font-bold tracking-tight">Nerdiez</span>
+            <span className="text-[17px] font-bold tracking-tight">nerdiez</span>
           </Link>
         </div>
         <div className="flex items-center gap-1.5">

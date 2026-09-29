@@ -61,7 +61,7 @@ export default function SignInDialog({
         </button>
         <BrandMark className="mx-auto mt-2 block h-16 w-16" />
         <p id={titleId} className="mt-4 text-center text-xl font-bold tracking-tight">
-          Welcome to Nerdiez
+          Welcome to nerdiez
         </p>
         <p id={descriptionId} className="mt-1 text-center text-sm leading-6 text-muted">
           {description}

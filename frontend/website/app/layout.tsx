@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin", "vietnamese"], variable: "--font-inter"
 const code = JetBrains_Mono({ subsets: ["latin"], variable: "--font-code" });
 
 export const metadata: Metadata = {
-  title: { default: "Nerdiez", template: "%s · Nerdiez" },
+  title: { default: "nerdiez", template: "%s · nerdiez" },
   description:
     "Articles, questions, and subject-based explanations on computer science and economics for curious minds.",
 };

@@ -45,7 +45,7 @@ export default function AppSidebar() {
         <Link href="/" className="flex items-center gap-2.5">
           <BrandMark />
           {open && <span className="leading-tight">
-            <span className="block text-base font-bold tracking-tight text-gray-900 dark:text-white">Nerdiez</span>
+            <span className="block text-base font-bold tracking-tight text-gray-900 dark:text-white">nerdiez</span>
             <span className="block text-[11px] font-medium uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Admin</span>
           </span>}
         </Link>

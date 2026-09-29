@@ -8,8 +8,8 @@ import { AuthProvider } from "@/context/AuthContext";
 const inter = Inter({ subsets: ["latin", "vietnamese"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: { default: "Nerdiez Admin", template: "%s · Nerdiez Admin" },
-  description: "Manage Nerdiez articles, discussions, subjects, and tags.",
+  title: { default: "nerdiez Admin", template: "%s · nerdiez Admin" },
+  description: "Manage nerdiez articles, discussions, subjects, and tags.",
 };
 
 // Applies the saved (or system) theme before paint so dark mode doesn't flash.

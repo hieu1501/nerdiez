@@ -5,7 +5,7 @@ export default function SignInForm({ prompt }: { prompt?: string }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark">
       <BrandMark className="mx-auto block h-16 w-16" />
-      <h1 className="mt-5 text-center text-xl font-bold tracking-tight text-gray-900 dark:text-white">Sign in to Nerdiez Admin</h1>
+      <h1 className="mt-5 text-center text-xl font-bold tracking-tight text-gray-900 dark:text-white">Sign in to nerdiez Admin</h1>
       <p className="mt-1 text-center text-sm text-gray-500 dark:text-gray-400">Use an account with administrator access.</p>
       <div className="mt-6 space-y-2.5">
         <a href={`/oauth2/authorization/keycloak?idp=google${promptParam}`} className={providerClass}>
