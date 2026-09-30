@@ -5,18 +5,20 @@ import org.commonmark.node.AbstractVisitor;
 import org.commonmark.node.Image;
 import org.commonmark.node.Link;
 import org.commonmark.node.Node;
+import org.commonmark.node.SourceSpan;
+import org.commonmark.parser.IncludeSourceSpans;
 import org.commonmark.parser.Parser;
-import org.commonmark.renderer.markdown.MarkdownRenderer;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Component
 public class MarkdownUtils {
-    private final Parser parser = Parser.builder().build();
-    private final MarkdownRenderer renderer = MarkdownRenderer.builder().build();
+    // Source spans let us patch image URLs in place; re-rendering would reformat the author's text.
+    private final Parser parser = Parser.builder().includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES).build();
 
     private final MediaUtils mediaUtils;
 
@@ -27,6 +29,7 @@ public class MarkdownUtils {
     public String normalizeMarkdownAndExtractImageUrls(String content, List<String> imagePaths) {
         Node document = parseDocument(content);
         List<String> errors = new ArrayList<>();
+        List<Replacement> replacements = new ArrayList<>();
         document.accept(new AbstractVisitor() {
             @Override
             public void visit(Link link) {
@@ -44,30 +47,34 @@ public class MarkdownUtils {
                 if (!errors.isEmpty()) {
                     throw new IllegalArgumentException(String.join("; ", errors));
                 }
+                Replacement replacement = replaceDestination(content, image, url);
+                if (replacement == null) {
+                    throw new IllegalArgumentException("Reference-style images are not supported");
+                }
+                replacements.add(replacement);
                 imagePaths.add(url.split("[?#]")[0]); // Don't store queries and fragments to database
-                image.setDestination(url);
                 super.visit(image);
             }
         });
-        return renderDocument(document);
+        return applyReplacements(content, replacements);
     }
 
-     public String denormalizeImageUrlsInContent(String content) {
+    public String denormalizeImageUrlsInContent(String content) {
         Node document = parseDocument(content);
+        List<Replacement> replacements = new ArrayList<>();
         document.accept(new AbstractVisitor() {
             @Override
             public void visit(Image image) {
                 String url = denormalizeUrl(image.getDestination(), "image");
-                if (url != null) {
-                    image.setDestination(url);
-                    super.visit(image);
-                }
-                else {
-                    image.unlink();
+                Replacement replacement = url != null
+                        ? replaceDestination(content, image, url)
+                        : new Replacement(spanStart(image), spanEnd(image), "");
+                if (replacement != null) {
+                    replacements.add(replacement);
                 }
             }
         });
-        return renderDocument(document);
+        return applyReplacements(content, replacements);
     }
 
     public List<String> extractImagePathsInContent(String content) {
@@ -87,8 +94,38 @@ public class MarkdownUtils {
         return parser.parse(document);
     }
 
-    private String renderDocument(Node node) {
-        return renderer.render(node);
+    private record Replacement(int start, int end, String text) {}
+
+    // Rewrites the "(url "title")" part of an inline image; returns null for reference-style images.
+    private Replacement replaceDestination(String content, Image image, String url) {
+        Node lastChild = image.getLastChild();
+        int labelEnd = lastChild != null ? spanEnd(lastChild) : spanStart(image) + 2;
+        int end = spanEnd(image);
+        if (!content.startsWith("](", labelEnd) || content.charAt(end - 1) != ')') {
+            return null;
+        }
+        String destination = url.matches(".*[\\s()<>].*") ? "<" + url + ">" : url;
+        String title = image.getTitle() == null || image.getTitle().isEmpty() ? ""
+                : " \"" + image.getTitle().replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        return new Replacement(labelEnd + 1, end, "(" + destination + title + ")");
+    }
+
+    private static int spanStart(Node node) {
+        return node.getSourceSpans().getFirst().getInputIndex();
+    }
+
+    private static int spanEnd(Node node) {
+        SourceSpan last = node.getSourceSpans().getLast();
+        return last.getInputIndex() + last.getLength();
+    }
+
+    // Applies from the end so earlier offsets stay valid.
+    private static String applyReplacements(String content, List<Replacement> replacements) {
+        StringBuilder result = new StringBuilder(content);
+        replacements.stream()
+                .sorted(Comparator.comparingInt(Replacement::start).reversed())
+                .forEach(replacement -> result.replace(replacement.start(), replacement.end(), replacement.text()));
+        return result.toString();
     }
 
     // Remove all root path from image links

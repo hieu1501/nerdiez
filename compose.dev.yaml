@@ -1,0 +1,203 @@
+# Local dev: everything except Spring, which runs on the host (IDE / mvnw).
+# Usage: docker compose -f compose.dev.yaml up -d
+# Same project name as compose.yaml, so the MySQL/Keycloak data volumes are shared with it.
+# Don't run both stacks at once: they use the same container names and ports.
+name: nerdiez
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql-container
+    # Needed for V1.4__create_triggers.sql's CREATE FUNCTION statements.
+    command: ["mysqld", "--log-bin-trust-function-creators=1"]
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+    # Loopback only: reachable by Spring on the host, not by the LAN.
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    secrets:
+      - db_root_password
+      - db_password
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$(cat /run/secrets/db_root_password)\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  keycloak-db:
+    image: postgres:17
+    container_name: nerdiez-keycloak-db-container
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak_db_password
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    secrets:
+      - keycloak_db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  keycloak:
+    build:
+      context: ./keycloak
+    container_name: nerdiez-keycloak-container
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    env_file:
+      - ./.env.keycloak
+    # Realm import only runs when the realm doesn't exist yet, i.e. on an empty database.
+    command: start --optimized --import-realm
+    # Spring on the host calls Keycloak here (KEYCLOAK_URL=http://localhost:8081/auth).
+    ports:
+      - "127.0.0.1:8081:8080"
+    environment:
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_CACHE: local
+      KC_HTTP_ENABLED: "true"
+      # Lets Spring's localhost:8081 calls work even though KC_HOSTNAME is https://localhost/auth.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_PROXY_HEADERS: xforwarded
+    secrets:
+      - keycloak_db_password
+      - keycloak_admin_password
+      - keycloak_client_secret
+      - google_idp_client_secret
+      - github_idp_client_secret
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /auth/health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q '\"status\": \"UP\"' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # Local stand-in for Cloudflare R2 (same S3 API).
+  minio:
+    # Official minio/minio images are gone; -dev variant adds the sh/cat the entrypoint needs.
+    image: cgr.dev/chainguard/minio:latest-dev
+    container_name: nerdiez-minio-container
+    # Root credentials double as Spring's R2 keys, so both read the same secrets.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        export MINIO_ROOT_USER="$$(cat /run/secrets/r2_access_key_id)"
+        export MINIO_ROOT_PASSWORD="$$(cat /run/secrets/r2_secret_access_key)"
+        exec minio server /data --console-address :9001
+    secrets:
+      - r2_access_key_id
+      - r2_secret_access_key
+    # 9000: S3 API for Spring on the host; 9001: web console.
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # One-shot: creates the bucket and makes it publicly readable, like media.nerdiez.com.
+  minio-init:
+    image: cgr.dev/chainguard/minio-client:latest-dev
+    container_name: nerdiez-minio-init-container
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - |
+        mc alias set local http://minio:9000 "$$(cat /run/secrets/r2_access_key_id)" "$$(cat /run/secrets/r2_secret_access_key)" &&
+        mc mb --ignore-existing local/nerdiez &&
+        mc anonymous set download local/nerdiez
+    secrets:
+      - r2_access_key_id
+      - r2_secret_access_key
+
+  # Production builds of the frontends; reached through nginx like in compose.yaml.
+  website:
+    build:
+      context: ./frontend/website
+    container_name: nerdiez-website-container
+    environment:
+      # Server-side rendering calls Spring on the host (see extra_hosts).
+      API_BASE_URL: http://spring:8080
+    extra_hosts:
+      - "spring:host-gateway"
+
+  admin:
+    build:
+      context: ./frontend/admin
+    container_name: nerdiez-admin-container
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nerdiez-nginx-container
+    # nginx resolves proxied hostnames at startup, so these must exist first.
+    depends_on:
+      - keycloak
+      - minio
+      - website
+      - admin
+    ports:
+      - "80:80"
+      - "443:443"
+      # HTTPS for MinIO images, see nginx/dev/minio.conf.
+      - "9443:9443"
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/dev/minio.conf:/etc/nginx/conf.d/minio.conf:ro
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
+      ADMIN_HOST: ${ADMIN_HOST:-admin.localhost}
+      SSL_CERTIFICATE: ${SSL_CERTIFICATE:-/etc/nginx/certs/fullchain.pem}
+      SSL_CERTIFICATE_KEY: ${SSL_CERTIFICATE_KEY:-/etc/nginx/certs/privkey.pem}
+      # Set to host.docker.internal:3000 / :3001 to use `npm run dev` on the host instead.
+      WEBSITE_UPSTREAM: ${WEBSITE_UPSTREAM:-website:3000}
+      ADMIN_UPSTREAM: ${ADMIN_UPSTREAM:-admin:3000}
+    # "spring" points at the host, so the template's `spring:8080` upstream reaches the host Spring.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "spring:host-gateway"
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+  db_password:
+    file: ./secrets/db_password.txt
+  keycloak_admin_password:
+    file: ./secrets/keycloak_admin_password.txt
+  keycloak_db_password:
+    file: ./secrets/keycloak_db_password.txt
+  keycloak_client_secret:
+    file: ./secrets/keycloak_client_secret.txt
+  google_idp_client_secret:
+    file: ./secrets/google_idp_client_secret.txt
+  github_idp_client_secret:
+    file: ./secrets/github_idp_client_secret.txt
+  r2_access_key_id:
+    file: ./secrets/r2_access_key_id.txt
+  r2_secret_access_key:
+    file: ./secrets/r2_secret_access_key.txt
+
+volumes:
+  mysql_data:
+  keycloak_db_data:
+  minio_data:

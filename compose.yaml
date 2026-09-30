@@ -92,6 +92,10 @@ services:
       KC_PROXY_HEADERS: xforwarded
       # Keycloak defaults to 70% heap; leave room for non-heap memory under the 1g cap.
       JAVA_OPTS_KC_HEAP: "-XX:MaxRAMPercentage=60"
+      # Drop idle pooled outbound connections (e.g. to Google) before they silently die.
+      KC_SPI_CONNECTIONS_HTTP_CLIENT_DEFAULT_MAX_CONNECTION_IDLE_TIME_MILLIS: "30000"
+      # Default 5s is tight for IdP calls like Google's userinfo.
+      KC_SPI_CONNECTIONS_HTTP_CLIENT_DEFAULT_SOCKET_TIMEOUT_MILLIS: "15000"
     secrets:
       - keycloak_db_password
       - keycloak_admin_password
@@ -127,6 +131,7 @@ services:
       - api
       - db
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       KEYCLOAK_URL: http://keycloak:8080/auth # Docker-internal, same in every environment.

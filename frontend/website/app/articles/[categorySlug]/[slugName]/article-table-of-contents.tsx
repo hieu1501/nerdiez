@@ -9,7 +9,7 @@ export interface TableOfContentsItem {
 }
 
 // Indent by depth below the shallowest heading, so an article starting at H2 isn't pushed right.
-function ContentsLinks({ items, activeId }: { items: TableOfContentsItem[]; activeId: string }) {
+function ContentsLinks({ items, activeId, onSelect }: { items: TableOfContentsItem[]; activeId: string; onSelect: (id: string) => void }) {
   const topLevel = Math.min(...items.map((item) => item.level));
   return <nav className="mt-4 border-l border-line" aria-label="Table of contents">
     {items.map((item) => {
@@ -18,6 +18,16 @@ function ContentsLinks({ items, activeId }: { items: TableOfContentsItem[]; acti
         key={item.id}
         href={`#${item.id}`}
         aria-current={active ? "location" : undefined}
+        onClick={(event) => {
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          const heading = document.getElementById(item.id);
+          if (!heading) return;
+          // Replace instead of push, so the modal's close (router.back) isn't spent on heading jumps.
+          event.preventDefault();
+          heading.scrollIntoView();
+          window.history.replaceState(window.history.state, "", `#${item.id}`);
+          onSelect(item.id);
+        }}
         style={{ paddingLeft: `${12 + (item.level - topLevel) * 14}px` }}
         className={`-ml-px block border-l-2 py-1.5 pr-1 text-[13px] leading-5 no-underline transition-colors ${active ? "border-accent font-semibold text-accent" : "border-transparent text-muted hover:border-line hover:text-ink"}`}
       >
@@ -32,6 +42,7 @@ export default function ArticleTableOfContents({ items, presentation = "page" }:
   presentation?: "page" | "modal";
 }) {
   const [activeId, setActiveId] = useState(items[0]?.id ?? "");
+  // Headings near the end of a short article never scroll into the observer's zone, so a click sets them directly.
   const stickyPosition = presentation === "modal"
     ? "top-6 max-h-[calc(100dvh-7rem)]"
     : "top-[76px] max-h-[calc(100dvh-6.5rem)]";
@@ -56,13 +67,13 @@ export default function ArticleTableOfContents({ items, presentation = "page" }:
   return <>
     <details className="card mt-8 px-4 py-3 min-[1180px]:hidden">
       <summary className="cursor-pointer select-none text-sm font-semibold">On this page</summary>
-      <ContentsLinks items={items} activeId={activeId} />
+      <ContentsLinks items={items} activeId={activeId} onSelect={setActiveId} />
     </details>
 
     <aside className="hidden h-full min-[1180px]:block" aria-label="Article navigation">
       <div className={`sticky overflow-y-auto pr-2 ${stickyPosition}`}>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">On this page</p>
-        <ContentsLinks items={items} activeId={activeId} />
+        <ContentsLinks items={items} activeId={activeId} onSelect={setActiveId} />
       </div>
     </aside>
   </>;

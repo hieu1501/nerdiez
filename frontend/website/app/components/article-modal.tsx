@@ -17,9 +17,10 @@ export default function ArticleModal({ children }: { children: ReactNode }) {
 
   const close = () => router.back();
 
+  // overflow-clip, not hidden: a hidden box still scrolls on anchor jumps, shifting the whole dialog.
   return <dialog ref={dialog} aria-label="Article reader" onCancel={(event) => { event.preventDefault(); close(); }}
     onClick={(event) => { if (event.target === event.currentTarget) close(); }}
-    className="m-auto h-dvh w-full max-h-none max-w-none overflow-hidden border-0 bg-paper p-0 text-ink shadow-pop backdrop:bg-black/55 backdrop:backdrop-blur-[2px] sm:h-[calc(100dvh-2rem)] sm:w-[min(94vw,72rem)] sm:rounded-2xl sm:border sm:border-line">
+    className="m-auto h-dvh w-full max-h-none max-w-none overflow-clip border-0 bg-paper p-0 text-ink shadow-pop backdrop:bg-black/55 backdrop:backdrop-blur-[2px] sm:h-[calc(100dvh-2rem)] sm:w-[min(94vw,72rem)] sm:rounded-2xl sm:border sm:border-line">
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-3 py-2 sm:px-4">
         <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Article</span>
