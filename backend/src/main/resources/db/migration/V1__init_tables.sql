@@ -99,7 +99,7 @@ CREATE TABLE `nerdiez`.`topics` (
   `slug` varchar(255) NOT NULL,
   `author_id` bigint NOT NULL,
   `category_id` bigint NOT NULL,
-  `description` varchar(2000) NOT NULL,
+  `description` varchar(2000),
   `is_active` bool DEFAULT FALSE
 );
 

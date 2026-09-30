@@ -4,8 +4,6 @@ import com.tmb.csnerd.demo.domain.security.UserPrincipal;
 import com.tmb.csnerd.demo.domain.services.auth.UserPrincipalService;
 import com.tmb.csnerd.demo.domain.services.talk.TalkCommandService;
 import com.tmb.csnerd.demo.dto.talk.publicresponse.PersonalTalkContentDTO;
-import com.tmb.csnerd.demo.dto.talk.request.AdminCreateTalkRequestDTO;
-import com.tmb.csnerd.demo.dto.talk.request.AdminPatchTalkRequestDTO;
 import com.tmb.csnerd.demo.dto.talk.request.PublicCreateTalkRequestDTO;
 import com.tmb.csnerd.demo.dto.talk.request.PublicPatchTalkRequestDTO;
 import jakarta.validation.Valid;

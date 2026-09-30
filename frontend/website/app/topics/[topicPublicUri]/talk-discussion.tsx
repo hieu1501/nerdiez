@@ -18,7 +18,7 @@ import TalkEditor from "./talk-editor";
 type EditableTalk = { publicUri: string; content: string };
 type Props = { topicPublicUri: string; view: TalkView; page: number; children: ReactNode };
 const DiscussionContext = createContext<{
-  draft: TalkDraft | null; editor: ReactNode; pending: boolean; recovered: boolean;
+  pending: boolean;
   edit: (talk: EditableTalk) => void; remove: (talk: EditableTalk, count: number) => void;
   navigate: (view: TalkView, page: number) => void;
 } | null>(null);
@@ -87,6 +87,8 @@ function DiscussionSession({ topicPublicUri, view, page, children }: Props) {
     if (!discard()) return;
     const next: TalkDraft = { publicUri: talk?.publicUri, content: talk?.content ?? "", originalContent: talk?.content ?? "" };
     setDraft(next); setNotice(null);
+    // The list hides while editing, so bring the editor's heading back into view.
+    if (talk) requestAnimationFrame(() => document.getElementById("discussion")?.scrollIntoView({ block: "start" }));
   };
   const update = (fields: Partial<Pick<TalkDraft, "content">>) => {
     if (!draft || !profile || !markerKey) return;
@@ -138,8 +140,8 @@ function DiscussionSession({ topicPublicUri, view, page, children }: Props) {
     } catch (failure) { if (alive.current) fail(failure, true); }
     finally { lock.current = false; if (alive.current) setPending(false); }
   };
-  const editor = draft && <TalkEditor key={draft.publicUri ?? "new"} draft={draft} pending={pending} error={error} recovered={recovered} update={update} submit={save} cancel={discard} />;
-  return <DiscussionContext.Provider value={{ draft, editor, pending, recovered, edit: open, remove, navigate }}>
+  const editing = Boolean(draft?.publicUri);
+  return <DiscussionContext.Provider value={{ pending, edit: open, remove, navigate }}>
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div>
         <h2 id="discussion-heading" className="flex items-center gap-2 text-lg font-bold tracking-tight"><MessagesSquare className="h-5 w-5 text-accent" aria-hidden="true" />Explanations</h2>
@@ -147,14 +149,15 @@ function DiscussionSession({ topicPublicUri, view, page, children }: Props) {
       </div>
       <button type="button" disabled={pending || status === "checking" || status === "error"} onClick={() => open()} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-button px-3.5 text-sm font-semibold text-button-text transition-colors hover:bg-accent-hover disabled:opacity-50"><Plus className="h-4 w-4" aria-hidden="true" />Add explanation</button>
     </div>
-    <nav aria-label="Discussion filter" className="mt-5 inline-flex rounded-lg bg-soft p-1">
+    {!editing && <nav aria-label="Discussion filter" className="mt-5 inline-flex rounded-lg bg-soft p-1">
       {(["all", "mine"] as const).map((tab) => <button key={tab} type="button" disabled={pending} aria-current={view === tab ? "page" : undefined} onClick={() => navigate(tab, 1)} className={`rounded-md px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${view === tab ? "bg-surface font-semibold text-ink shadow-card" : "text-muted hover:text-ink"}`}>{tab === "all" ? "All replies" : "My replies"}</button>)}
-    </nav>
+    </nav>}
     {status === "error" && <p role="alert" className="mt-4 text-sm">Could not check your session. <button type="button" onClick={retryProfile} className="font-semibold text-accent underline">Retry</button></p>}
     {notice && <p role="status" className="mt-4 rounded-lg bg-accent-soft px-3.5 py-2.5 text-sm font-medium text-accent">{notice}</p>}
     {storageWarning && <p role="status" className="mt-4 text-sm text-muted">Draft recovery is unavailable. Copy your writing before leaving.</p>}
-    {draft && (!draft.publicUri || recovered) && editor}
-    {view === "all" ? children : status === "authenticated" && profile ? <MyTalks key={`${page}:${reload}`} topicPublicUri={topicPublicUri} page={page} username={profile.username} /> : status === "checking" ? <CompactLoading label="Checking session" /> : status !== "error" && <div className="card mt-4 py-10 text-center"><button type="button" onClick={() => requestSignIn("Sign in to view your replies.")} className="inline-flex h-9 items-center rounded-lg bg-button px-4 text-sm font-semibold text-button-text hover:bg-accent-hover">Sign in to view your replies</button></div>}
+    {draft?.publicUri && <EditingNotice content={draft.originalContent} />}
+    {draft && <TalkEditor key={draft.publicUri ?? "new"} draft={draft} pending={pending} error={error} recovered={recovered} update={update} submit={save} cancel={discard} />}
+    {editing ? null : view === "all" ? children : status === "authenticated" && profile ? <MyTalks key={`${page}:${reload}`} topicPublicUri={topicPublicUri} page={page} username={profile.username} /> : status === "checking" ? <CompactLoading label="Checking session" /> : status !== "error" && <div className="card mt-4 py-10 text-center"><button type="button" onClick={() => requestSignIn("Sign in to view your replies.")} className="inline-flex h-9 items-center rounded-lg bg-button px-4 text-sm font-semibold text-button-text hover:bg-accent-hover">Sign in to view your replies</button></div>}
     <dialog ref={dialog} aria-labelledby="delete-talk-title" aria-describedby="delete-talk-description" onCancel={(event) => { event.preventDefault(); if (!lock.current) setSelected(null); }} onClose={() => { if (!lock.current) setSelected(null); }} className="fixed inset-0 m-auto w-[min(90vw,26rem)] rounded-2xl border border-line bg-surface p-6 text-ink shadow-pop backdrop:bg-black/50">
       <h2 id="delete-talk-title" className="text-lg font-bold">Delete reply?</h2><p id="delete-talk-description" className="mt-3 text-sm text-muted">This permanently deletes your reply. This cannot be undone.</p>
       {deleteError && <p role="alert" className="mt-4 text-sm text-danger">{deleteError}</p>}
@@ -163,14 +166,22 @@ function DiscussionSession({ topicPublicUri, view, page, children }: Props) {
   </DiscussionContext.Provider>;
 }
 
+function EditingNotice({ content }: { content: string }) {
+  const excerpt = content.replace(/[#>*_`~|-]+/g, " ").replace(/\s+/g, " ").trim();
+  return <div role="status" className="mt-5 flex gap-3 rounded-xl border border-line bg-soft/60 px-4 py-3">
+    <Pencil className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+    <div className="min-w-0 text-sm">
+      <p className="font-semibold">Editing your reply</p>
+      <p className="mt-0.5 line-clamp-2 text-muted">{excerpt || "Empty reply"}</p>
+    </div>
+  </div>;
+}
+
 // Edit/Delete live only in My replies; All replies is for reading and voting.
 export function TalkEntry({ talk, author, count, footer, manage = false, children }: { talk: EditableTalk; author: string; count: number; footer?: ReactNode; manage?: boolean; children: ReactNode }) {
   const { profile } = useAuth();
-  const { draft, editor, pending, recovered, edit, remove } = useDiscussion();
+  const { pending, edit, remove } = useDiscussion();
   const owned = manage && profile?.username === author;
-  // Recovered editors appear above the list even if their talk is on another page.
-  const editing = owned && draft?.publicUri === talk.publicUri;
-  if (editing && !recovered) return editor;
   return <>
     {children}
     {(footer || owned) && <div className="mt-2 flex flex-wrap items-center justify-between gap-3 sm:pl-8">

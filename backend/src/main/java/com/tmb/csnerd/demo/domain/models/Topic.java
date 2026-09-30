@@ -29,8 +29,7 @@ public class Topic {
     @Column(name = "name", nullable = false,  length = 255)
     private String name;
 
-    @NotNull
-    @Column(name = "description", length = 2000, nullable = false)
+    @Column(name = "description", length = 2000)
     private String description;
 
     @Column(name = "is_active")
