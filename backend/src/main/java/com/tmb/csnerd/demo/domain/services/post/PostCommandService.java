@@ -57,7 +57,7 @@ public class PostCommandService {
     }
 
     public PersonalPostDetailDTO patchPostByPublicUri(String publicUri, PublicPatchPostRequestDTO request, UserPrincipal author) {
-        Long postId = postRepository.getActivePostIdByPublicUri(publicUri).orElseThrow(() -> new PostByPublicUriNotFoundException(publicUri));
+        Long postId = findAuthoredPostId(publicUri, author);
         Post updatedPost = postTransactionalService.patchPostTransactional(postId, request, author);
         VoteStatsDTO voteStats = postVoteService.getPostVoteInformationByPostId(postId);
         return convertToProfilePostDetailDTO(updatedPost, voteStats);
@@ -68,7 +68,7 @@ public class PostCommandService {
     }
 
     public void softDeletePostByPublicUri(String publicUri,  UserPrincipal author) {
-        Long postId = postRepository.getActivePostIdByPublicUri(publicUri).orElseThrow(() -> new PostByPublicUriNotFoundException(publicUri));
+        Long postId = findAuthoredPostId(publicUri, author);
         postTransactionalService.softDeletePostTransactional(postId, author);
     }
 
@@ -77,8 +77,13 @@ public class PostCommandService {
     }
 
     public void hardDeletePostByPublicUri(String publicUri,  UserPrincipal author) {
-        Long postId = postRepository.getActivePostIdByPublicUri(publicUri).orElseThrow(() -> new PostByPublicUriNotFoundException(publicUri));
+        Long postId = findAuthoredPostId(publicUri, author);
         postTransactionalService.hardDeletePostTransactional(postId, author);
+    }
+
+    private Long findAuthoredPostId(String publicUri, UserPrincipal author) {
+        return postRepository.getPostIdForProfileByPublicUri(publicUri, author.getUser().getId())
+                .orElseThrow(() -> new PostByPublicUriNotFoundException(publicUri));
     }
 
     private Post createPost(AdminCreatePostRequestDTO request, UserPrincipal author) {
