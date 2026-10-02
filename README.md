@@ -1,1 +1,16 @@
-A project for Reddit-like application but for computer science and economics topics.
+# nerdiez
+A community-based learning platform aims to offer more comprehensible ways to learn.
+
+## Features
+- Articles: share experiences, case studies... for others.
+- Ask and answer: ask topics you don't understand to get comprehensible answers or help others by answering based on your knowledge.
+
+## Main technologies
+- Framework: Spring Boot, Hibernate, Keycloak, Flyway, NextJS.
+- Database: MySQL.
+- Tools: Caffeine cache, Docker, NGINX.
+
+## Installation
+1. Clone the project.
+2. Fill out your own .env files and secrets.
+3. Run ```docker compose pull && docker compose up```.
